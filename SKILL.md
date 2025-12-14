@@ -400,6 +400,62 @@ func (j *Job) Run(ctx context.Context) error {
 }
 ```
 
+## Code Quality & Linting
+
+**Reference:** `references/linting.md`
+
+### Key Conventions
+
+```go
+// ST1005: Error strings must be lowercase, no punctuation
+return errors.New("invalid input")           // GOOD
+return errors.New("Invalid input.")          // BAD
+
+// gosec G104: Explicitly ignore known-nil errors
+_, _ = hash.Write(data)  // hash.Hash.Write never errors
+
+// Naming: Use ID, URL, HTTP (not Id, Url, Http)
+var userID string        // GOOD
+var userId string        // BAD (ST1003)
+```
+
+### golangci-lint v2
+
+See `references/linting.md` for complete configuration including:
+- Linter selection by category (bugs, security, style, performance)
+- Exclusion patterns for complex functions
+- Common fixes for staticcheck/revive
+
+## API Design Patterns
+
+**Reference:** `references/api-design.md`
+
+### Bitmask Options
+
+```go
+type ParseOption int
+
+const (
+    Second    ParseOption = 1 << iota
+    Minute
+    Hour
+    Descriptor
+    Hash
+)
+
+// Usage: parser := NewParser(Minute | Hour | Descriptor | Hash)
+```
+
+### Functional Options
+
+```go
+func WithTimeout(d time.Duration) Option {
+    return func(c *Config) { c.timeout = d }
+}
+
+// Usage: NewParser(WithTimeout(30*time.Second), WithHash("key"))
+```
+
 ## Error Handling Best Practices
 
 ```go
@@ -430,4 +486,6 @@ func (e *ValidationError) Error() string {
 - `references/resilience.md` - Retry, shutdown, recovery
 - `references/docker.md` - Docker client patterns
 - `references/ldap.md` - LDAP/Active Directory integration
-- `references/testing.md` - Test strategies and patterns
+- `references/testing.md` - Test strategies, fuzz testing, mutation testing
+- `references/linting.md` - golangci-lint v2, staticcheck, code quality
+- `references/api-design.md` - Bitmask options, functional options, builders
