@@ -16,6 +16,72 @@ This skill provides production-grade patterns for Go application development, ex
 - Designing resilient systems with retry logic
 - Setting up comprehensive test suites
 
+## Core Principles
+
+### Type Safety is Non-Negotiable
+
+**Type safety is a MUST-HAVE requirement.** Go's compile-time type checking is one of its greatest strengths. Never sacrifice it for convenience.
+
+**Avoid:**
+- `interface{}` / `any` when concrete types are possible
+- `sync.Map` when a typed map with mutex works
+- Type assertions scattered throughout code
+- Reflection-heavy designs
+
+**Prefer:**
+- Generics (`[T any]`) for type-safe reusable code
+- Concrete types with explicit interfaces
+- Compile-time verification over runtime checks
+
+```go
+// BAD: Lost type safety
+var cache sync.Map
+cache.Store("key", value)
+v, _ := cache.Load("key")
+item := v.(*MyType)  // Runtime assertion - can panic!
+
+// GOOD: Type-safe with generics
+type Cache[T any] struct {
+    mu    sync.RWMutex
+    items map[string]T
+}
+
+func (c *Cache[T]) Get(key string) (T, bool) {
+    c.mu.RLock()
+    defer c.mu.RUnlock()
+    v, ok := c.items[key]
+    return v, ok  // Compile-time type safety
+}
+```
+
+### Consistency is Critical
+
+**Architectural consistency is VERY IMPORTANT.** A codebase should follow consistent patterns throughout. Mixed approaches create confusion and bugs.
+
+**Rules:**
+1. **One pattern per problem domain**: If using channels for synchronization, use channels everywhere for that purpose
+2. **Match existing patterns**: New code should follow established conventions in the codebase
+3. **Refactor holistically**: When changing a pattern, change it everywhere or don't change it at all
+
+**Example - Concurrency patterns:**
+```go
+// If your codebase uses channels for coordination:
+type Scheduler struct {
+    add      chan *Entry      // Channel-based
+    remove   chan EntryID     // Channel-based
+    snapshot chan chan []Entry // Channel-based
+    // DON'T mix in sync.Map or other patterns!
+}
+
+// Consistency means predictable behavior and easier debugging
+```
+
+**Why consistency matters:**
+- Reduces cognitive load for maintainers
+- Makes code review more effective
+- Prevents subtle bugs from pattern mismatches
+- Enables better tooling and static analysis
+
 ## Architecture Patterns
 
 ### Package Structure
