@@ -343,6 +343,109 @@ func TestDockerExec(t *testing.T) { ... }
 func TestFullWorkflow(t *testing.T) { ... }
 ```
 
+### Testify Best Practices
+
+Use `stretchr/testify` for readable assertions:
+
+```go
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+
+func TestUserValidation(t *testing.T) {
+    t.Parallel()  // Enable parallel execution
+
+    user := NewUser("test@example.com")
+
+    // Use assert for non-fatal checks
+    assert.NotNil(t, user)
+    assert.Equal(t, "test@example.com", user.Email)
+
+    // Use require for fatal checks (stops test on failure)
+    require.NoError(t, user.Validate())
+
+    // Use specific assertions for better error messages
+    assert.Empty(t, user.Errors)           // NOT: assert.Equal(t, "", ...)
+    assert.True(t, user.IsActive)          // NOT: assert.Equal(t, true, ...)
+    assert.Nil(t, user.DeletedAt)          // NOT: assert.Equal(t, nil, ...)
+    assert.Len(t, user.Roles, 2)           // NOT: assert.Equal(t, 2, len(...))
+    assert.Contains(t, user.Roles, "admin")
+}
+```
+
+### Parallel Test Considerations
+
+```go
+// Tests that CAN run in parallel
+func TestPureFunction(t *testing.T) {
+    t.Parallel()  // Safe - no shared state
+    // ...
+}
+
+// Tests that CANNOT run in parallel (global state)
+//nolint:paralleltest // Tests modify global logrus state and cannot run in parallel
+func TestBuildLogger_ValidLevels(t *testing.T) {
+    // Modifies global logger - NOT parallel safe
+    logrus.SetLevel(logrus.DebugLevel)
+    // ...
+}
+
+// Tests that modify global variables
+//nolint:paralleltest // Modifies global newDockerHandler
+func TestBootLogsConfigError(t *testing.T) {
+    orig := newDockerHandler
+    defer func() { newDockerHandler = orig }()
+    // ...
+}
+```
+
+### Modern Go Syntax (1.22+)
+
+```go
+// Go 1.22+ integer range syntax
+for range 5 {  // Instead of: for i := 0; i < 5; i++
+    doSomething()
+}
+
+// With index when needed
+for i := range 5 {
+    doSomethingWith(i)
+}
+
+// Range over function (Go 1.23+)
+for item := range iter.Seq(items) {
+    process(item)
+}
+```
+
+### HTTP Test Patterns
+
+```go
+func TestAPIEndpoint(t *testing.T) {
+    t.Parallel()
+
+    // Use http.Method* constants
+    req := httptest.NewRequest(http.MethodPost, "/api/users", body)  // NOT: "POST"
+    req.Header.Set("Content-Type", "application/json")
+
+    rec := httptest.NewRecorder()
+    handler.ServeHTTP(rec, req)
+
+    assert.Equal(t, http.StatusCreated, rec.Code)  // NOT: 201
+}
+```
+
+### Common Linter Directives
+
+```go
+//nolint:paralleltest    // Test cannot run in parallel (modifies global state)
+//nolint:tparallel       // Subtests cannot run in parallel
+//nolint:testifylint     // Disable testify-specific checks (use sparingly)
+//nolint:gosec           // Security check false positive (document why)
+```
+
 ### Running Tests
 
 ```bash
