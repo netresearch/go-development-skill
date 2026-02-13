@@ -1,5 +1,7 @@
 # Resilience Patterns in Go
 
+> **For cron job resilience:** go-cron has built-in `RetryWithBackoff`, `RetryOnError`, `CircuitBreaker`, `Timeout`, and `TimeoutWithContext` wrappers that integrate directly with the scheduler. See `references/cron-scheduling.md` for cron-specific resilience patterns.
+
 ## Retry Logic
 
 ### Basic Exponential Backoff
