@@ -316,42 +316,33 @@ func WithSlackNotification(webhookURL string, onlyOnError bool) Middleware {
 
 ## Scheduler Architecture
 
+> **See also:** `references/cron-scheduling.md` for comprehensive go-cron patterns.
+
 ### Core Loop Pattern
+
+Use [`github.com/netresearch/go-cron`](https://github.com/netresearch/go-cron) — it has built-in named jobs, runtime updates, per-entry context, and resilience wrappers. No need to maintain your own job registry:
 
 ```go
 type Scheduler struct {
-    cron    *cron.Cron
-    jobs    map[string]cron.EntryID
-    mu      sync.RWMutex
-    ctx     context.Context
-    cancel  context.CancelFunc
+    cron *cron.Cron
 }
 
-func NewScheduler() *Scheduler {
-    ctx, cancel := context.WithCancel(context.Background())
+func NewScheduler(ctx context.Context) *Scheduler {
     return &Scheduler{
-        cron:   cron.New(cron.WithSeconds()),
-        jobs:   make(map[string]cron.EntryID),
-        ctx:    ctx,
-        cancel: cancel,
+        cron: cron.New(
+            cron.WithContext(ctx),           // Parent context for graceful shutdown
+            cron.WithChain(
+                cron.Recover(logger),        // Catch panics
+                cron.SkipIfStillRunning(logger),
+            ),
+        ),
     }
 }
 
-func (s *Scheduler) AddJob(job Job) error {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-
-    entryID, err := s.cron.AddFunc(job.GetSchedule(), func() {
-        if err := job.Run(s.ctx); err != nil {
-            log.WithError(err).Error("Job execution failed")
-        }
-    })
-    if err != nil {
-        return err
-    }
-
-    s.jobs[job.GetName()] = entryID
-    return nil
+func (s *Scheduler) AddJob(name, schedule string, job cron.Job) (cron.EntryID, error) {
+    return s.cron.AddJob(schedule, job,
+        cron.WithName(name),  // Built-in O(1) lookup by name
+    )
 }
 
 func (s *Scheduler) Start() {
@@ -359,39 +350,33 @@ func (s *Scheduler) Start() {
 }
 
 func (s *Scheduler) Stop() {
-    s.cancel()
-    ctx := s.cron.Stop()
-    <-ctx.Done()
+    s.cron.StopAndWait()  // Block until all running jobs finish
 }
 ```
 
 ### Dynamic Job Management
 
+go-cron provides atomic operations — no manual remove+re-add or external map tracking:
+
 ```go
+// Atomic create-or-update by name
+func (s *Scheduler) UpsertJob(name, schedule string, job cron.Job) (cron.EntryID, error) {
+    return s.cron.UpsertJob(schedule, job, cron.WithName(name))
+}
+
+// Graceful replacement of long-running jobs
+func (s *Scheduler) ReplaceJob(name, schedule string, job cron.Job) (cron.EntryID, error) {
+    s.cron.WaitForJobByName(name)  // Wait for current execution to finish
+    return s.cron.UpsertJob(schedule, job, cron.WithName(name))
+}
+
+// Remove and list use built-in name support
 func (s *Scheduler) RemoveJob(name string) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-
-    if entryID, ok := s.jobs[name]; ok {
-        s.cron.Remove(entryID)
-        delete(s.jobs, name)
-    }
+    s.cron.RemoveByName(name)
 }
 
-func (s *Scheduler) UpdateJob(job Job) error {
-    s.RemoveJob(job.GetName())
-    return s.AddJob(job)
-}
-
-func (s *Scheduler) ListJobs() []string {
-    s.mu.RLock()
-    defer s.mu.RUnlock()
-
-    names := make([]string, 0, len(s.jobs))
-    for name := range s.jobs {
-        names = append(names, name)
-    }
-    return names
+func (s *Scheduler) ListJobs() []cron.Entry {
+    return s.cron.Entries()
 }
 ```
 

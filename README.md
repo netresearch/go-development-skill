@@ -18,6 +18,7 @@ This is an **Agent Skill** following the [open standard](https://agentskills.io)
 ## Features
 
 - **Architecture Patterns**: Package structure best practices, job abstraction hierarchy, configuration management (5-layer precedence), middleware chain pattern
+- **Cron Scheduling**: go-cron patterns — named jobs, runtime updates, per-entry context, resilience wrappers, observability, FakeClock testing
 - **Resilience Patterns**: Retry logic with exponential backoff, graceful shutdown, context propagation, error handling strategies
 - **Docker Integration**: Optimized Docker client patterns, buffer pooling for performance, container execution patterns
 - **LDAP Integration**: Active Directory patterns, user and group management, authentication flows
@@ -65,6 +66,7 @@ go-development-skill/
 ├── SKILL.md                              # Skill metadata and core patterns
 └── references/
     ├── architecture.md                   # Package structure, patterns
+    ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
     ├── resilience.md                     # Retry, shutdown, recovery
     ├── docker.md                         # Docker client patterns
     ├── ldap.md                           # LDAP/Active Directory integration
@@ -83,6 +85,15 @@ go-development-skill/
 - Job abstraction hierarchy
 - Configuration management (5-layer precedence)
 - Middleware chain pattern
+
+### Cron Scheduling (go-cron)
+- Named jobs with O(1) lookup
+- Runtime updates (UpsertJob, UpdateSchedule, UpdateEntry)
+- Per-entry context with automatic cancellation
+- Resilience wrappers (retry, circuit breaker, timeout)
+- Observability hooks (Prometheus integration)
+- FakeClock for deterministic testing
+- Missed job catch-up policies
 
 ### Resilience Patterns
 - Retry logic with exponential backoff

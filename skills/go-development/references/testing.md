@@ -391,40 +391,37 @@ func TestCacheExpiration(t *testing.T) {
 }
 ```
 
-### CronClock for go-cron Compatibility
+### go-cron Built-in FakeClock
 
-When using libraries that expect specific timer interfaces (like go-cron):
+go-cron includes a built-in `FakeClock` — no custom wrapper needed:
 
 ```go
-// CronClock wraps FakeClock with go-cron Timer interface
-type CronClock struct {
-    *FakeClock
-}
+import cron "github.com/netresearch/go-cron"
 
-func NewCronClock(start time.Time) *CronClock {
-    return &CronClock{FakeClock: NewFakeClock(start)}
-}
-
-// NewTimer returns a timer compatible with go-cron
-func (c *CronClock) NewTimer(d time.Duration) cron.Timer {
-    return c.FakeClock.NewTimer(d)
-}
-
-// Usage with go-cron scheduler
 func TestCronScheduler(t *testing.T) {
-    clock := NewCronClock(time.Now())
-    c := cron.New(cron.WithClock(clock))
+    fakeClock := cron.NewFakeClock(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+    c := cron.New(cron.WithClock(fakeClock))
 
-    var runs int
-    c.AddFunc("@every 1m", func() { runs++ })
+    executed := make(chan struct{}, 1)
+    c.AddFunc("@every 1m", func() {
+        executed <- struct{}{}
+    })
     c.Start()
+    defer c.Stop()
 
-    // Advance 5 minutes instantly
-    clock.Advance(5 * time.Minute)
+    fakeClock.BlockUntil(1)       // Wait for scheduler to register timer
+    fakeClock.Advance(time.Minute) // Trigger job instantly
 
-    assert.Equal(t, 5, runs) // Ran 5 times
+    select {
+    case <-executed:
+        // Job ran
+    case <-time.After(time.Second):
+        t.Fatal("job did not execute")
+    }
 }
 ```
+
+See `references/cron-scheduling.md` for more go-cron testing patterns.
 
 ### Benefits
 
