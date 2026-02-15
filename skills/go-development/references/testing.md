@@ -672,7 +672,7 @@ func BenchmarkJobExecution(b *testing.B) {
     ctx := context.Background()
 
     b.ResetTimer()
-    for i := 0; i < b.N; i++ {
+    for range b.N {
         job.Run(ctx)
     }
 }
@@ -681,7 +681,7 @@ func BenchmarkParseSchedule(b *testing.B) {
     schedule := "*/5 * * * *"
 
     b.ResetTimer()
-    for i := 0; i < b.N; i++ {
+    for range b.N {
         ParseSchedule(schedule)
     }
 }
@@ -803,7 +803,6 @@ func TestParseConfig(t *testing.T) {
     }
 
     for _, tt := range tests {
-        tt := tt // Capture range variable (required for parallel subtests)
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel() // Subtests can also be parallel
 
@@ -842,7 +841,6 @@ func TestWithSharedSetup(t *testing.T) {
     }
 
     for _, tt := range tests {
-        tt := tt
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel()
             resp := server.Get(tt.endpoint)
@@ -916,27 +914,16 @@ func (c *Cache) Get(k string) string {
 
 **2. Goroutine capturing loop variable:**
 
+> **Note:** Go 1.22+ fixed loop variable capture. The `i := i` shadow is no longer needed.
+> The examples below show the modern style.
+
 ```go
-// BAD: All goroutines see final value of i
-for i := 0; i < 10; i++ {
+// Modern Go (1.22+): safe without shadow
+for i := range 10 {
     go func() {
-        fmt.Println(i) // Race! Prints 10 ten times
+        fmt.Println(i) // Safe: each iteration gets its own copy
     }()
 }
-
-// GOOD: Capture variable
-for i := 0; i < 10; i++ {
-    i := i // Shadow the variable
-    go func() {
-        fmt.Println(i) // Safe: each goroutine has its own copy
-    }()
-}
-
-// GOOD: Pass as argument
-for i := 0; i < 10; i++ {
-    go func(n int) {
-        fmt.Println(n)
-    }(i)
 }
 ```
 

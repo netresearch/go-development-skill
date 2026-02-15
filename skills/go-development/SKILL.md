@@ -28,8 +28,9 @@ A Go development review is NOT complete until all related skills have been execu
 
 ### Type Safety
 
-- **Avoid:** `interface{}`, `sync.Map`, scattered type assertions, reflection
-- **Prefer:** Generics `[T any]`, concrete types, compile-time verification
+- **Avoid:** `interface{}` (use `any`), `sync.Map`, scattered type assertions, reflection, `errors.As` with pre-declared variables
+- **Prefer:** Generics `[T any]`, `errors.AsType[T]` (Go 1.26), concrete types, compile-time verification
+- **Modernize:** Run `go fix ./...` after Go upgrades to apply automated modernizers
 
 ### Consistency
 
@@ -60,6 +61,7 @@ Load these as needed for detailed patterns and examples:
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
+| `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
 
 ## Quality Gates
 

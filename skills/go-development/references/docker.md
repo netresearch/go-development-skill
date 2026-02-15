@@ -35,7 +35,7 @@ func NewOptimizedDockerClient(endpoint string) (*OptimizedDockerClient, error) {
         client:   client,
         endpoint: endpoint,
         bufferPool: &sync.Pool{
-            New: func() interface{} {
+            New: func() any {
                 return NewCircularBuffer(64 * 1024) // 64KB buffers
             },
         },
@@ -51,7 +51,7 @@ func NewOptimizedDockerClientFromEnv() (*OptimizedDockerClient, error) {
     return &OptimizedDockerClient{
         client: client,
         bufferPool: &sync.Pool{
-            New: func() interface{} {
+            New: func() any {
                 return NewCircularBuffer(64 * 1024)
             },
         },

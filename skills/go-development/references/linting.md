@@ -48,7 +48,7 @@ linters:
     - revive          # Fast, configurable linter
     - gocritic        # Opinionated linter
 
-    # Modernization (Go 1.21+)
+    # Modernization (Go 1.22+)
     - intrange        # Use for range n
     - usestdlibvars   # Use http.StatusOK instead of 200
     - modernize       # Modern Go features
@@ -201,6 +201,21 @@ type ValidationFailed struct{}                  // Should end with Error
 var ErrInvalidInput = errors.New("invalid input")
 type ValidationError struct{}
 ```
+
+## go fix — Automated Modernization (Go 1.26+)
+
+Go 1.26 ships a rewritten `go fix` with 22 built-in modernizers. Run after Go upgrades:
+
+```bash
+go fix -diff ./...    # Preview changes
+go fix ./...          # Apply changes
+```
+
+Key modernizers: `any`, `rangeint`, `slicescontains`, `mapsloop`, `minmax`, `waitgroup`, `testingcontext`, `reflecttypefor`, `stringscutprefix`, `stringsseq`, `stringsbuilder`.
+
+**Always run linters after `go fix`** — it may leave unused imports, redundant variables, or gofumpt issues.
+
+See `references/modernization.md` for the full modernizer reference and manual migrations like `errors.AsType[T]`.
 
 ## Running Linters
 
