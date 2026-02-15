@@ -1,6 +1,6 @@
 ---
 name: go-development
-description: "Production-grade Go development patterns for building resilient services. Use when developing Go applications, implementing job schedulers, Docker integrations, LDAP clients, or needing patterns for resilience, testing, and performance optimization. By Netresearch."
+description: "Use when developing Go applications, implementing job schedulers, Docker integrations, LDAP clients, or building resilient services with thorough testing and performance optimization."
 ---
 
 # Go Development Patterns
