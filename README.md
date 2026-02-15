@@ -75,7 +75,8 @@ go-development-skill/
     ├── api-design.md                     # Bitmask options, functional options
     ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
     ├── mutation-testing.md               # Gremlins test quality measurement
-    └── makefile.md                       # Standard Makefile interface
+    ├── makefile.md                       # Standard Makefile interface
+    └── modernization.md                  # Go 1.26 modernizers, go fix, errors.AsType
 ```
 
 ## Expertise Areas

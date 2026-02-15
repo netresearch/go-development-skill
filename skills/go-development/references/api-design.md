@@ -289,13 +289,12 @@ var (
     ErrInvalidFormat = &ValidationError{Message: "invalid format"}
 )
 
-// Usage with errors.Is/As
+// Usage with errors.Is/AsType (Go 1.26+)
 if errors.Is(err, ErrEmptySpec) {
     // Handle empty spec
 }
 
-var validationErr *ValidationError
-if errors.As(err, &validationErr) {
+if validationErr, ok := errors.AsType[*ValidationError](err); ok {
     fmt.Printf("Field %s is invalid: %s\n", validationErr.Field, validationErr.Value)
 }
 ```

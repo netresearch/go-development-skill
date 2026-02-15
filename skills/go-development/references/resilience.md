@@ -72,9 +72,8 @@ func addJitter(d time.Duration) time.Duration {
 }
 
 func isRetryable(err error) bool {
-    // Network errors, timeouts are retryable
-    var netErr net.Error
-    if errors.As(err, &netErr) {
+    // Network errors, timeouts are retryable (Go 1.26+: use errors.AsType)
+    if netErr, ok := errors.AsType[net.Error](err); ok {
         return netErr.Temporary() || netErr.Timeout()
     }
 
@@ -250,12 +249,12 @@ func main() {
     }()
 
     // Start workers
-    for i := 0; i < 5; i++ {
+    for id := range 5 {
         sm.AddWorker()
-        go func(id int) {
+        go func() {
             defer sm.WorkerDone()
             worker(sm.Context(), id)
-        }(i)
+        }()
     }
 
     // Wait for shutdown signal

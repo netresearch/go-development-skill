@@ -452,12 +452,11 @@ func (e *ValidationError) Error() string {
     return fmt.Sprintf("validation failed for %s: %s", e.Field, e.Message)
 }
 
-// Error checking
+// Error checking (Go 1.26+: use errors.AsType for type-safe extraction)
 func HandleJob(name string) error {
     job, err := scheduler.GetJob(name)
     if err != nil {
-        var notFound *JobNotFoundError
-        if errors.As(err, &notFound) {
+        if _, ok := errors.AsType[*JobNotFoundError](err); ok {
             // Handle not found
             return nil
         }
