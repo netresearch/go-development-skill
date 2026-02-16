@@ -126,9 +126,8 @@ func TestParseSchedule(t *testing.T) {
 
 ```go
 func TestJobExecution(t *testing.T) {
-    // Shared setup
-    logger := logrus.New()
-    logger.SetOutput(io.Discard)
+    // Shared setup — use slog with discard handler (see references/logging.md)
+    logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
     tests := []struct {
         name    string

@@ -131,6 +131,7 @@ type ShutdownManager struct {
     cleanups   []func(context.Context) error
     mu         sync.Mutex
     shutdownCh chan struct{}
+    logger     *slog.Logger
 }
 
 func NewShutdownManager(timeout time.Duration) *ShutdownManager {
@@ -168,16 +169,16 @@ func (sm *ShutdownManager) WaitForSignal() {
 
     select {
     case sig := <-sigChan:
-        log.WithField("signal", sig).Info("Received shutdown signal")
+        sm.logger.Info("Received shutdown signal", "signal", sig)
     case <-sm.shutdownCh:
-        log.Info("Shutdown requested programmatically")
+        sm.logger.Info("Shutdown requested programmatically")
     }
 
     sm.Shutdown()
 }
 
 func (sm *ShutdownManager) Shutdown() {
-    log.Info("Starting graceful shutdown")
+    sm.logger.Info("Starting graceful shutdown")
 
     // Cancel context to stop accepting new work
     sm.cancel()
@@ -195,9 +196,9 @@ func (sm *ShutdownManager) Shutdown() {
 
     select {
     case <-workersDone:
-        log.Info("All workers finished")
+        sm.logger.Info("All workers finished")
     case <-shutdownCtx.Done():
-        log.Warn("Timeout waiting for workers")
+        sm.logger.Warn("Timeout waiting for workers")
     }
 
     // Run cleanup functions
@@ -207,11 +208,11 @@ func (sm *ShutdownManager) Shutdown() {
 
     for i := len(cleanups) - 1; i >= 0; i-- {
         if err := cleanups[i](shutdownCtx); err != nil {
-            log.WithError(err).Error("Cleanup function failed")
+            sm.logger.Error("Cleanup function failed", "error", err)
         }
     }
 
-    log.Info("Graceful shutdown complete")
+    sm.logger.Info("Graceful shutdown complete")
 }
 
 func (sm *ShutdownManager) RequestShutdown() {
@@ -223,16 +224,20 @@ func (sm *ShutdownManager) RequestShutdown() {
 
 ```go
 func main() {
-    sm := NewShutdownManager(30 * time.Second)
+    logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+        AddSource: true,
+    }))
+
+    sm := NewShutdownManager(30*time.Second, logger)
 
     // Register cleanup functions
     sm.RegisterCleanup(func(ctx context.Context) error {
-        log.Info("Closing database connections")
+        logger.Info("Closing database connections")
         return db.Close()
     })
 
     sm.RegisterCleanup(func(ctx context.Context) error {
-        log.Info("Flushing metrics")
+        logger.Info("Flushing metrics")
         return metrics.Flush(ctx)
     })
 
@@ -244,7 +249,8 @@ func main() {
 
     go func() {
         if err := server.ListenAndServe(); err != http.ErrServerClosed {
-            log.WithError(err).Fatal("Server error")
+            logger.Error("Server error", "error", err)
+            os.Exit(1)
         }
     }()
 
