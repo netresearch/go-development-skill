@@ -51,6 +51,7 @@ Load these as needed for detailed patterns and examples:
 | Reference | Purpose |
 |-----------|---------|
 | `references/architecture.md` | Package structure, config management, middleware chains |
+| `references/logging.md` | Structured logging with log/slog, migration from logrus |
 | `references/cron-scheduling.md` | go-cron patterns: named jobs, runtime updates, context, resilience |
 | `references/resilience.md` | Retry logic, graceful shutdown, context propagation |
 | `references/docker.md` | Docker client patterns, buffer pooling |

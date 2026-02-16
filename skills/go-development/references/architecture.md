@@ -256,23 +256,23 @@ func (c *MiddlewareChain) Wrap(job Job) Job {
 ### Common Middlewares
 
 ```go
-// Logging middleware
-func WithLogging(logger *logrus.Logger) Middleware {
+// Logging middleware (see references/logging.md for comprehensive slog patterns)
+func WithLogging(logger *slog.Logger) Middleware {
     return func(next Job) Job {
         return JobFunc(func(ctx context.Context) error {
             start := time.Now()
-            logger.WithField("job", next.GetName()).Info("Starting job")
+            logger.Info("Starting job", "job", next.GetName())
 
             err := next.Run(ctx)
 
-            fields := logrus.Fields{
-                "job":      next.GetName(),
-                "duration": time.Since(start),
+            attrs := []any{
+                "job", next.GetName(),
+                "duration", time.Since(start),
             }
             if err != nil {
-                logger.WithFields(fields).WithError(err).Error("Job failed")
+                logger.Error("Job failed", append(attrs, "error", err)...)
             } else {
-                logger.WithFields(fields).Info("Job completed")
+                logger.Info("Job completed", attrs...)
             }
             return err
         })
@@ -402,7 +402,7 @@ GET  /metrics               // Prometheus metrics
 ```go
 type Handler struct {
     scheduler *Scheduler
-    logger    *logrus.Logger
+    logger    *slog.Logger
 }
 
 func (h *Handler) ListJobs(w http.ResponseWriter, r *http.Request) {
@@ -421,7 +421,7 @@ func (h *Handler) TriggerJob(w http.ResponseWriter, r *http.Request) {
 
     go func() {
         if err := job.Run(context.Background()); err != nil {
-            h.logger.WithError(err).Error("Manual job execution failed")
+            h.logger.Error("Manual job execution failed", "job", name, "error", err)
         }
     }()
 
