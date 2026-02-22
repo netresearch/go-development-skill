@@ -202,7 +202,7 @@ var ErrInvalidInput = errors.New("invalid input")
 type ValidationError struct{}
 ```
 
-### revive var-naming: Stdlib Package Name Conflicts
+### revive: Stdlib Package Name Conflicts
 
 The `var-naming` rule flags package names that conflict with Go stdlib packages.
 Common conflicts and safe alternatives:
@@ -210,7 +210,7 @@ Common conflicts and safe alternatives:
 | Avoid | Conflicts with | Use instead |
 |-------|---------------|-------------|
 | `rpc` | `net/rpc` | `rpchandler`, `rpcapi` |
-| `jsonrpc` | `net/rpc/jsonrpc` | `rpchandler` |
+| `jsonrpc` | `net/rpc/jsonrpc` | `jsonrpchandler`, `jsonrpcapi` |
 | `http` | `net/http` | `httputil`, `server` |
 | `log` | `log` | `logger`, `logging` |
 
@@ -226,7 +226,7 @@ type JSONRPCResponse struct { ... }
 type Response struct { ... }
 ```
 
-### golangci-lint CI vs Local Version Drift
+### golangci-lint: CI vs Local Version Drift
 
 When CI uses `version: latest` in the golangci-lint-action, linter behavior
 may differ from local runs:
