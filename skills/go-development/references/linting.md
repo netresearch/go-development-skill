@@ -202,6 +202,47 @@ var ErrInvalidInput = errors.New("invalid input")
 type ValidationError struct{}
 ```
 
+### revive: Stdlib Package Name Conflicts
+
+The `var-naming` rule flags package names that conflict with Go stdlib packages.
+Common conflicts and safe alternatives:
+
+| Avoid | Conflicts with | Use instead |
+|-------|---------------|-------------|
+| `rpc` | `net/rpc` | `rpchandler`, `rpcapi` |
+| `jsonrpc` | `net/rpc/jsonrpc` | `jsonrpchandler`, `jsonrpcapi` |
+| `http` | `net/http` | `httputil`, `server` |
+| `log` | `log` | `logger`, `logging` |
+
+Check with: `go list std | grep -w <name>`
+
+Also verify type names don't stutter after rename:
+
+```go
+// BAD - stutters: rpchandler.JSONRPCResponse
+type JSONRPCResponse struct { ... }
+
+// GOOD - clean: rpchandler.Response
+type Response struct { ... }
+```
+
+### golangci-lint: CI vs Local Version Drift
+
+When CI uses `version: latest` in the golangci-lint-action, linter behavior
+may differ from local runs:
+
+- gosec rules (e.g., G704 SSRF) may fire in CI but not locally due to version differences
+- Use `//nolint:gosec,nolintlint` to suppress in both environments
+- `nolintlint` complains about unused directives when the target linter doesn't fire locally
+
+```go
+// Suppresses gosec in CI and nolintlint locally when gosec doesn't fire
+resp, err := client.Do(req) //nolint:gosec,nolintlint // G704: URL is a compile-time constant
+```
+
+**Best practice**: Pin the golangci-lint version in CI to match local, or accept
+the dual-nolint pattern for edge cases.
+
 ## go fix — Automated Modernization (Go 1.26+)
 
 Go 1.26 ships a rewritten `go fix` with 22 built-in modernizers. Run after Go upgrades:
