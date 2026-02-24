@@ -6,9 +6,12 @@
   "license": "MIT",
   "author": {
     "name": "Netresearch DTT GmbH",
-    "email": "info@netresearch.de"
+    "url": "https://github.com/netresearch/go-development-skill"
   },
   "skills": [
     "./skills/go-development"
-  ]
+  ],
+  "support": {
+    "issues": "https://github.com/netresearch/go-development-skill/issues"
+  }
 }
