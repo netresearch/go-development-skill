@@ -10,8 +10,5 @@
   },
   "skills": [
     "./skills/go-development"
-  ],
-  "support": {
-    "issues": "https://github.com/netresearch/go-development-skill/issues"
-  }
+  ]
 }
