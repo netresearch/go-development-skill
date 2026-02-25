@@ -1,5 +1,8 @@
 {
-  "name": "netresearch/agent-go-development",
+  "name": "netresearch/go-development-skill",
+  "replace": {
+    "netresearch/agent-go-development": "self.version"
+  },
   "description": "AI agent skill for Go development patterns, testing, and resilience",
   "type": "ai-agent-skill",
   "license": "MIT",
