@@ -1,0 +1,23 @@
+{
+  "name": "netresearch/agent-go-development",
+  "description": "AI agent skill for Go development patterns, testing, and resilience",
+  "type": "ai-agent-skill",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Netresearch DTT GmbH",
+      "homepage": "https://www.netresearch.de/",
+      "role": "Manufacturer"
+    }
+  ],
+  "require": {
+    "netresearch/composer-agent-skill-plugin": "*"
+  },
+  "extra": {
+    "ai-agent-skill": "skills/go-development/SKILL.md"
+  },
+  "support": {
+    "issues": "https://github.com/netresearch/go-development-skill/issues",
+    "source": "https://github.com/netresearch/go-development-skill"
+  }
+}
