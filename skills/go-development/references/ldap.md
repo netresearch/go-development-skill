@@ -484,6 +484,41 @@ func (c *Client) ListComputers(filter string) ([]*Computer, error) {
     return computers, nil
 }
 
+## Common Gotchas
+
+### simple-ldap-go "localhost" Mock Detection
+
+The `simple-ldap-go` library's `isExampleServerName()` function treats `"localhost"` as a mock/example server name. When this is detected, the library returns fake connections that fail with `"connection to example server not available"`.
+
+```go
+// BAD - simple-ldap-go treats "localhost" as a mock server
+cfg := simpleldap.Config{
+    Server: "localhost",
+    Port:   1389,
+}
+// Returns: "connection to example server not available"
+
+// GOOD - Use 127.0.0.1 to avoid mock detection
+cfg := simpleldap.Config{
+    Server: "127.0.0.1",
+    Port:   1389,
+}
+```
+
+This applies to any context using `simple-ldap-go`, including integration tests against a real LDAP server running on localhost.
+
+### IPv6-Safe Host:Port Formatting
+
+Use `net.JoinHostPort` instead of `fmt.Sprintf` for constructing address strings. `go vet` flags `fmt.Sprintf("%s:%d", host, port)` because it produces invalid addresses for IPv6 hosts (e.g., `::1:389` instead of `[::1]:389`).
+
+```go
+// BAD - Fails with IPv6 addresses, flagged by go vet
+address := fmt.Sprintf("%s:%d", host, port)
+
+// GOOD - Handles IPv4, IPv6, and hostnames correctly
+address := net.JoinHostPort(host, strconv.Itoa(port))
+```
+
 ## Testing LDAP with Testcontainers
 
 ### LDAP Lazy Binding Behavior
@@ -590,6 +625,89 @@ func TestLDAPIntegration(t *testing.T) {
     // Test operations...
 }
 ```
+
+### CI Service Container Pattern (Without Testcontainers)
+
+For CI environments where testcontainers are not available, use GitHub Actions service containers with a `skipIfNoLDAP` pattern:
+
+```go
+package web_test
+
+import (
+    "net"
+    "strconv"
+    "testing"
+    "time"
+
+    ldapv3 "github.com/go-ldap/ldap/v3"
+)
+
+const (
+    ldapHost   = "127.0.0.1" // NOT "localhost" — avoids simple-ldap-go mock detection
+    ldapPort   = 1389
+    ldapBaseDN = "dc=test,dc=local"
+    ldapAdmin  = "cn=admin,dc=test,dc=local"
+    ldapPass   = "admin"
+)
+
+// skipIfNoLDAP skips the test if the LDAP server is not reachable.
+func skipIfNoLDAP(t *testing.T) {
+    t.Helper()
+
+    address := net.JoinHostPort(ldapHost, strconv.Itoa(ldapPort))
+    conn, err := (&net.Dialer{Timeout: 2 * time.Second}).Dial("tcp", address)
+    if err != nil {
+        t.Skipf("LDAP server not available at %s: %v", address, err)
+    }
+
+    _ = conn.Close()
+}
+
+// seedLDAPData uses go-ldap/ldap/v3 directly to create test entries.
+func seedLDAPData(t *testing.T) {
+    t.Helper()
+
+    address := net.JoinHostPort(ldapHost, strconv.Itoa(ldapPort))
+    conn, err := ldapv3.DialURL("ldap://" + address)
+    if err != nil {
+        t.Fatalf("failed to connect to LDAP: %v", err)
+    }
+    defer func() { _ = conn.Close() }()
+
+    if err := conn.Bind(ldapAdmin, ldapPass); err != nil {
+        t.Fatalf("failed to bind: %v", err)
+    }
+
+    // Add OUs, users, groups as needed
+    addReq := ldapv3.NewAddRequest("ou=users,"+ldapBaseDN, nil)
+    addReq.Attribute("objectClass", []string{"organizationalUnit"})
+    addReq.Attribute("ou", []string{"users"})
+
+    _ = conn.Add(addReq) // Ignore "already exists" errors on re-runs
+}
+```
+
+GitHub Actions service container configuration:
+
+```yaml
+services:
+  openldap:
+    image: osixia/openldap:1.5.0
+    ports:
+      - 1389:389
+    env:
+      LDAP_ORGANISATION: "Test Org"
+      LDAP_DOMAIN: "test.local"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_BASE_DN: "dc=test,dc=local"
+```
+
+**Key patterns:**
+- Use `127.0.0.1` not `localhost` to avoid simple-ldap-go mock detection
+- Use `net.Dialer` (not `net.DialTimeout`) to satisfy the `noctx` linter
+- Use `go-ldap/ldap/v3` directly for seeding test data (independent of app's LDAP library)
+- Make handler assertions resilient: accept success OR error when LDAP session credentials may be stale
+- Close connections with `defer func() { _ = conn.Close() }()` to satisfy `errcheck`
 
 ### Security Note: Test Credentials
 

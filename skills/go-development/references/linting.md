@@ -243,6 +243,101 @@ resp, err := client.Do(req) //nolint:gosec,nolintlint // G704: URL is a compile-
 **Best practice**: Pin the golangci-lint version in CI to match local, or accept
 the dual-nolint pattern for edge cases.
 
+## Common Linter Gotchas
+
+Specific linter rules that frequently trip up developers:
+
+### dupl: Test Function Duplication
+
+The `dupl` linter flags test functions with similar structure (threshold ~30 lines). Extract shared logic into helpers:
+
+```go
+// BAD - Two test functions with nearly identical structure triggers dupl
+func TestHandlerA(t *testing.T) {
+    app := setupApp(t)
+    req := httptest.NewRequest(http.MethodGet, "/a", nil)
+    resp, err := app.Test(req)
+    require.NoError(t, err)
+    assert.Equal(t, 200, resp.StatusCode)
+    // ... 30+ lines of similar setup
+}
+
+// GOOD - Extract common pattern into a helper
+func testEndpoint(t *testing.T, app *fiber.App, method, path string, wantStatus int) {
+    t.Helper()
+    req := httptest.NewRequest(method, path, nil)
+    resp, err := app.Test(req)
+    require.NoError(t, err)
+    assert.Equal(t, wantStatus, resp.StatusCode)
+}
+```
+
+### nlreturn: Blank Line Before Return
+
+The `nlreturn` linter requires a blank line before `return` statements, including inside closures and anonymous functions:
+
+```go
+// BAD
+func example() error {
+    result := compute()
+    return result  // nlreturn: missing blank line before return
+}
+
+// GOOD
+func example() error {
+    result := compute()
+
+    return result
+}
+```
+
+### noctx: Network Dialing
+
+The `noctx` linter flags `net.DialTimeout()`. Use `net.Dialer` instead:
+
+```go
+// BAD - noctx flags this
+conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+
+// GOOD - Use Dialer struct
+conn, err := (&net.Dialer{Timeout: 2 * time.Second}).Dial("tcp", address)
+```
+
+### revive unused-parameter: Underscore Convention
+
+For intentionally unused parameters, rename to `_` prefix or bare `_`:
+
+```go
+// BAD - revive flags unused parameter
+func setup(t *testing.T) { /* t not used */ }
+
+// GOOD - Explicitly mark as unused
+func setup(_ *testing.T) { /* intentionally unused */ }
+```
+
+**Note:** Only use `_` for parameters that are truly unused. If you need `t.Helper()`, `t.Cleanup()`, etc., keep the parameter named.
+
+### errcheck: Deferred Close
+
+The `errcheck` linter requires handling errors from `Close()` even in defer:
+
+```go
+// BAD - errcheck flags this
+defer conn.Close()
+
+// GOOD - Explicitly discard the error
+defer func() { _ = conn.Close() }()
+```
+
+### revive: Package Names with Underscores
+
+Go convention discourages underscores in package names. When they are intentional (e.g., test packages with build tags), suppress with a nolint comment:
+
+```go
+//nolint:revive // underscore in package name is intentional for build tag isolation
+package integration_test
+```
+
 ## go fix — Automated Modernization (Go 1.26+)
 
 Go 1.26 ships a rewritten `go fix` with 22 built-in modernizers. Run after Go upgrades:
