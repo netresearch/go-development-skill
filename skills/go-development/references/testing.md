@@ -1186,6 +1186,114 @@ require.NoError(t, err)
 defer resp.Body.Close()
 ```
 
+### Fiber v2 Testing Patterns
+
+#### Full App Setup with Cleanup
+
+Use `t.Cleanup()` to ensure goroutine teardown and prevent leaks:
+
+```go
+func setupFullTestApp(t *testing.T) *App {
+    t.Helper()
+
+    app := NewApp(testConfig)
+    app.Setup()
+
+    t.Cleanup(func() {
+        _ = app.fiber.Shutdown()
+    })
+
+    return app
+}
+```
+
+#### Auth Session Cookie Generation
+
+For handlers requiring authentication, create session cookies with a separate mini Fiber app:
+
+```go
+func createAuthCookie(t *testing.T, sessionStore *session.Store) *http.Cookie {
+    t.Helper()
+
+    miniApp := fiber.New()
+    var cookie *http.Cookie
+
+    miniApp.Get("/set-session", func(c *fiber.Ctx) error {
+        sess, err := sessionStore.Get(c)
+        if err != nil {
+            return err
+        }
+        sess.Set("username", "testuser")
+        sess.Set("dn", "cn=testuser,dc=example,dc=com")
+
+        return sess.Save()
+    })
+
+    req := httptest.NewRequest(http.MethodGet, "/set-session", nil)
+    resp, err := miniApp.Test(req)
+    require.NoError(t, err)
+    defer resp.Body.Close()
+
+    for _, c := range resp.Cookies() {
+        if c.Name == "session_id" {
+            cookie = c
+        }
+    }
+    require.NotNil(t, cookie)
+
+    return cookie
+}
+```
+
+#### Using Auth Cookies in Tests
+
+```go
+func TestProtectedHandler(t *testing.T) {
+    app := setupFullTestApp(t)
+    cookie := createAuthCookie(t, app.sessionStore)
+
+    req := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+    req.AddCookie(cookie)
+
+    resp, err := app.fiber.Test(req)
+    require.NoError(t, err)
+    defer resp.Body.Close()
+
+    assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+```
+
+### Prefer assert.ErrorAs Over errors.As in Tests
+
+Use `assert.ErrorAs` from testify for better failure messages:
+
+```go
+// BAD - Manual errors.As with less informative failures
+var target *MyError
+if !errors.As(err, &target) {
+    t.Errorf("expected *MyError, got %T", err)
+}
+
+// GOOD - testify provides clear diff output on failure
+var target *MyError
+assert.ErrorAs(t, err, &target)
+```
+
+### Always Use t.Helper() in Test Helpers
+
+Mark all test helper functions with `t.Helper()` so failure messages
+point to the calling test, not the helper:
+
+```go
+func assertUserExists(t *testing.T, store UserStore, username string) {
+    t.Helper() // Failure will report caller's line, not this function
+
+    user, err := store.Get(username)
+    require.NoError(t, err)
+    assert.NotNil(t, user)
+}
+```
+
 ## Makefile Integration
 
 ```makefile
