@@ -76,16 +76,9 @@ govulncheck ./...                  # Vulnerability scan
 go test -race ./...                # Race detection
 ```
 
-## Go Stdlib Vulnerability Fixes
+## Stdlib Vulnerability Fixes
 
-When `govulncheck` reports stdlib vulnerabilities (e.g., `GO-2026-xxxx` in `crypto/x509`, `net/url`, `os`, `html/template`):
-
-1. Check fix version: `curl -sL "https://vuln.go.dev/ID/GO-2026-XXXX.json" | jq '.affected[0].ranges[0].events[] | select(.fixed) | .fixed'`
-2. Update `go.mod`: change `go X.Y.Z` to the fixed version
-3. Run `go mod tidy` to verify no `go.sum` changes needed
-4. CI workflows using `go-version-file: go.mod` will automatically pick up the new version
-
-**Important:** For repos with branch protection/merge queues, create a PR branch — don't push directly to main.
+When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`. Use a PR branch for repos with branch protection.
 
 ---
 
