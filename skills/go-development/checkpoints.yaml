@@ -120,6 +120,51 @@ mechanical:
     severity: info
     desc: "Build flags should include -trimpath for reproducibility"
 
+  # === VULNERABILITY SCANNING ===
+  - id: GD-17
+    type: regex
+    target: Makefile
+    pattern: "govulncheck"
+    severity: warning
+    desc: "Makefile should have a govulncheck target for vulnerability scanning"
+
+  # === GOLANGCI-LINT V2 CONFIG ===
+  - id: GD-18
+    type: command
+    pattern: "test -f .golangci.yml && grep -q 'version:' .golangci.yml || test -f .golangci.yaml && grep -q 'version:' .golangci.yaml || true"
+    severity: info
+    desc: "golangci-lint config should declare version field (v2 format)"
+
+  # === FUZZ TESTS ===
+  - id: GD-19
+    type: command
+    pattern: "find . -name '*_test.go' -not -path './vendor/*' | xargs grep -l 'func Fuzz' 2>/dev/null | head -1 | grep -q . || true"
+    severity: info
+    desc: "Project should have fuzz test functions (Fuzz*) for parser/input code"
+
+  # === MAKEFILE ALL TARGET ===
+  - id: GD-23
+    type: contains
+    target: Makefile
+    pattern: "all:"
+    severity: info
+    desc: "Makefile should have an 'all' target combining lint, test, and build"
+
+  # === COVERPROFILE ===
+  - id: GD-24
+    type: regex
+    target: Makefile
+    pattern: "-coverprofile"
+    severity: info
+    desc: "Makefile test target should generate coverage profile"
+
+  # === ERROR VARIABLE NAMING ===
+  - id: GD-25
+    type: command
+    pattern: "! find . -name '*.go' -not -path './vendor/*' -not -name '*_test.go' | xargs grep -nE 'var [A-Z][a-zA-Z]+ = errors\\.New' 2>/dev/null | grep -vE 'var Err' | head -1 | grep -q . 2>/dev/null"
+    severity: info
+    desc: "Exported error variables should use Err prefix (e.g., ErrInvalidInput)"
+
 llm_reviews:
   - id: GD-20
     domain: go-quality
