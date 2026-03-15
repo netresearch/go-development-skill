@@ -161,7 +161,7 @@ mechanical:
   # === ERROR VARIABLE NAMING ===
   - id: GD-25
     type: command
-    pattern: "! find . -name '*.go' -not -path './vendor/*' -not -name '*_test.go' | xargs grep -nE 'var [A-Z][a-zA-Z]+ = errors\\.New' 2>/dev/null | grep -vE 'var Err' | head -1 | grep -q . 2>/dev/null"
+    pattern: "! grep -rlE 'var [A-Z]\\w+ = errors\\.New' --include='*.go' . | xargs grep -vl 'var Err' | head -1 | grep -q ."
     severity: info
     desc: "Exported error variables should use Err prefix (e.g., ErrInvalidInput)"
 
