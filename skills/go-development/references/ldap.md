@@ -683,7 +683,12 @@ func seedLDAPData(t *testing.T) {
     addReq.Attribute("objectClass", []string{"organizationalUnit"})
     addReq.Attribute("ou", []string{"users"})
 
-    _ = conn.Add(addReq) // Ignore "already exists" errors on re-runs
+    if err := conn.Add(addReq); err != nil {
+        // It's okay if the entry already exists on re-runs.
+        if ldapErr, ok := err.(*ldapv3.Error); !ok || ldapErr.ResultCode != ldapv3.LDAPResultEntryAlreadyExists {
+            t.Fatalf("failed to add seed data: %v", err)
+        }
+    }
 }
 ```
 

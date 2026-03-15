@@ -1237,6 +1237,7 @@ func createAuthCookie(t *testing.T, sessionStore *session.Store) *http.Cookie {
     for _, c := range resp.Cookies() {
         if c.Name == "session_id" {
             cookie = c
+            break
         }
     }
     require.NotNil(t, cookie)
