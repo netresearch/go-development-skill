@@ -1,0 +1,160 @@
+# Checkpoints for go-development skill
+# Validates Go project structure, tooling, and best practices
+
+version: 1
+skill_id: go-development
+
+preconditions:
+  - type: file_exists
+    target: go.mod
+
+mechanical:
+  # === PROJECT STRUCTURE ===
+  - id: GD-01
+    type: file_exists
+    target: go.mod
+    severity: error
+    desc: "go.mod must exist"
+
+  - id: GD-02
+    type: file_exists
+    target: go.sum
+    severity: error
+    desc: "go.sum must exist (dependencies must be tracked)"
+
+  - id: GD-03
+    type: file_exists
+    target: Makefile
+    severity: warning
+    desc: "Makefile should exist for standard build interface"
+
+  - id: GD-04
+    type: file_exists
+    target: .gitignore
+    severity: warning
+    desc: ".gitignore should exist"
+
+  # === LINTING CONFIGURATION ===
+  - id: GD-05
+    type: command
+    pattern: "test -f .golangci.yml || test -f .golangci.yaml || test -f .golangci.toml"
+    severity: warning
+    desc: "golangci-lint config should exist (.golangci.yml or similar)"
+
+  # === TESTS ===
+  - id: GD-06
+    type: command
+    pattern: "find . -name '*_test.go' -not -path './vendor/*' | head -1 | grep -q ."
+    severity: error
+    desc: "Project must have test files (*_test.go)"
+
+  - id: GD-07
+    type: command
+    pattern: "find . -name '*_test.go' -not -path './vendor/*' | xargs grep -l 'func Test' | head -1 | grep -q ."
+    severity: error
+    desc: "Test files must contain test functions"
+
+  # === MAKEFILE TARGETS ===
+  - id: GD-08
+    type: contains
+    target: Makefile
+    pattern: "test:"
+    severity: warning
+    desc: "Makefile should have a test target"
+
+  - id: GD-09
+    type: contains
+    target: Makefile
+    pattern: "build:"
+    severity: warning
+    desc: "Makefile should have a build target"
+
+  - id: GD-10
+    type: contains
+    target: Makefile
+    pattern: "lint:"
+    severity: warning
+    desc: "Makefile should have a lint target"
+
+  # === GO MODULE HYGIENE ===
+  - id: GD-11
+    type: regex
+    target: go.mod
+    pattern: "^go \\d+\\.\\d+"
+    severity: error
+    desc: "go.mod must specify Go version"
+
+  - id: GD-12
+    type: regex
+    target: go.mod
+    pattern: "^module "
+    severity: error
+    desc: "go.mod must declare module path"
+
+  # === CODE QUALITY ===
+  - id: GD-13
+    type: command
+    pattern: "! find . -name '*.go' -not -path './vendor/*' | xargs grep -l 'interface{}' | head -1 | grep -q . 2>/dev/null"
+    severity: info
+    desc: "Prefer 'any' over 'interface{}' (Go 1.18+)"
+
+  - id: GD-14
+    type: command
+    pattern: "! find . -name '*.go' -not -path './vendor/*' | xargs grep -l 'sync.Map' | head -1 | grep -q . 2>/dev/null"
+    severity: info
+    desc: "Prefer generic typed maps over sync.Map"
+
+  # === RACE DETECTION ===
+  - id: GD-15
+    type: regex
+    target: Makefile
+    pattern: "-race"
+    severity: warning
+    desc: "Makefile test target should include -race flag"
+
+  # === DOCKER (if applicable) ===
+  - id: GD-16
+    type: regex
+    target: Makefile
+    pattern: "-trimpath"
+    severity: info
+    desc: "Build flags should include -trimpath for reproducibility"
+
+llm_reviews:
+  - id: GD-20
+    domain: go-quality
+    prompt: |
+      Review the Go project for code quality and best practices:
+      1. Does go.mod use a reasonable Go version (not outdated)?
+      2. Is the golangci-lint config comprehensive (errcheck, govet, staticcheck enabled)?
+      3. Does the Makefile provide standard targets (test, build, lint, all)?
+      4. Are error messages lowercase without punctuation (Go convention)?
+      5. Is error wrapping used consistently with fmt.Errorf and %w?
+      6. Are acronyms properly cased (ID, URL, HTTP not Id, Url, Http)?
+    severity: warning
+    desc: "Go code quality and convention adherence"
+
+  - id: GD-21
+    domain: go-quality
+    prompt: |
+      Review the Go project for testing completeness:
+      1. Do packages with business logic have corresponding test files?
+      2. Are table-driven tests used for functions with multiple input scenarios?
+      3. Do test helpers call t.Helper()?
+      4. Is t.Parallel() used where safe?
+      5. Are tests independent (no shared mutable state between tests)?
+      6. Is test coverage reasonable for critical paths?
+    severity: warning
+    desc: "Go testing patterns and coverage"
+
+  - id: GD-22
+    domain: go-quality
+    prompt: |
+      Review the Go project for security and resilience:
+      1. Are HTTP requests made with context (no noctx violations)?
+      2. Are HTTP response bodies always closed?
+      3. Is graceful shutdown implemented for servers?
+      4. Are goroutines properly managed (no leaks)?
+      5. Is context propagation consistent throughout?
+    severity: info
+    desc: "Go security and resilience patterns"
