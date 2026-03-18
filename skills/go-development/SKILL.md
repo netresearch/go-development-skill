@@ -1,6 +1,13 @@
 ---
 name: go-development
-description: "Use when developing Go applications, implementing job schedulers, Docker integrations, LDAP clients, or building resilient services with thorough testing and performance optimization."
+description: "USE THIS SKILL when developing Go applications, implementing job schedulers or cron, Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), running golangci-lint, or optimizing Go performance."
+license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
+compatibility: "Requires go 1.21+, golangci-lint, docker."
+metadata:
+  author: Netresearch DTT GmbH
+  version: "1.6.0"
+  repository: https://github.com/netresearch/go-development-skill
+allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read Write Glob Grep
 ---
 
 # Go Development Patterns

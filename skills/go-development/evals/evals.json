@@ -1,0 +1,30 @@
+[
+  {
+    "name": "setup_new_go_project",
+    "prompt": "Set up a new Go project with testing, linting, and a Makefile",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(go mod init|go\\.mod|Makefile)"
+      },
+      {
+        "type": "content",
+        "pattern": "(golangci-lint|go test|go vet)"
+      }
+    ]
+  },
+  {
+    "name": "add_ldap_integration",
+    "prompt": "Add LDAP integration to this Go project for user authentication",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(ldap|go-ldap|LDAP|Active Directory)"
+      },
+      {
+        "type": "content",
+        "pattern": "(Bind|Search|TLS|connection pool)"
+      }
+    ]
+  }
+]
