@@ -1,6 +1,6 @@
 ---
 name: go-development
-description: "USE THIS SKILL when developing Go applications, implementing job schedulers or cron, Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), running golangci-lint, or optimizing Go performance."
+description: "Use when developing Go applications, implementing job schedulers or cron, Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), running golangci-lint, or optimizing Go performance."
 license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
 compatibility: "Requires go 1.21+, golangci-lint, docker."
 metadata:
