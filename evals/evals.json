@@ -1,0 +1,11 @@
+{
+  "skill_name": "go-development",
+  "evals": [
+    {
+      "id": 1,
+      "name": "setup-lefthook",
+      "prompt": "Set up git hooks for the Go project at /home/cybot/projects/ofelia/main/ — show me what config to use.",
+      "expected_output": "Should provide a lefthook.yml template with go-vet, gofmt, golangci-lint, conventional commits"
+    }
+  ]
+}
