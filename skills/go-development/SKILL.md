@@ -37,7 +37,7 @@ A Go review is NOT complete until all related skills have been executed.
 
 - **Avoid:** `interface{}` (use `any`), `sync.Map`, scattered type assertions, reflection
 - **Prefer:** Generics `[T any]`, `errors.AsType[T]` (Go 1.26), concrete types
-- **Modernize:** Run `go fix ./...` after upgrades
+- Run `go fix ./...` after upgrades
 
 ### Consistency
 
@@ -76,7 +76,7 @@ Load as needed:
 
 ## Quality Gates
 
-Run these checks before completing any review:
+Run before completing any review:
 
 ```bash
 golangci-lint run --timeout 5m    # Linting
@@ -88,7 +88,7 @@ go test -race ./...                # Race detection
 
 ## Stdlib Vulnerability Fixes
 
-When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`. Use a PR branch for repos with branch protection.
+When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`. Use PR branches for repos with branch protection.
 
 ---
 
