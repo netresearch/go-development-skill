@@ -53,7 +53,7 @@ A Go review is NOT complete until all related skills have been executed.
 
 ## References
 
-Install git hooks before first commit — see `references/lefthook-template.md`.
+Git hooks: `ls lefthook.yml 2>/dev/null && lefthook install || echo "Add lefthook — see references/lefthook-template.md"`
 
 Load as needed:
 
