@@ -158,6 +158,13 @@ mechanical:
     severity: info
     desc: "Makefile test target should generate coverage profile"
 
+  # === GIT HOOKS ===
+  - id: GD-26
+    type: file_exists
+    target: lefthook.yml
+    severity: info
+    desc: "lefthook.yml should exist for pre-commit/pre-push git hooks"
+
   # === ERROR VARIABLE NAMING ===
   - id: GD-25
     type: command

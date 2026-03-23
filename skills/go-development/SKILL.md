@@ -5,7 +5,7 @@ license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
 compatibility: "Requires go 1.21+, golangci-lint, docker."
 metadata:
   author: Netresearch DTT GmbH
-  version: "1.7.0"
+  version: "1.8.0"
   repository: https://github.com/netresearch/go-development-skill
 allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read Write Glob Grep
 ---
@@ -29,15 +29,15 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 2. **Enterprise readiness** - Invoke `/netresearch-skills-bundle:enterprise-readiness` for OpenSSF Scorecard, SLSA compliance, supply chain security
 3. **GitHub project setup** - Invoke `/netresearch-skills-bundle:github-project` for branch protection, rulesets, CI workflow validation
 
-A Go development review is NOT complete until all related skills have been executed.
+A Go review is NOT complete until all related skills have been executed.
 
 ## Core Principles
 
 ### Type Safety
 
-- **Avoid:** `interface{}` (use `any`), `sync.Map`, scattered type assertions, reflection, `errors.As` with pre-declared variables
-- **Prefer:** Generics `[T any]`, `errors.AsType[T]` (Go 1.26), concrete types, compile-time verification
-- **Modernize:** Run `go fix ./...` after Go upgrades to apply automated modernizers
+- **Avoid:** `interface{}` (use `any`), `sync.Map`, scattered type assertions, reflection
+- **Prefer:** Generics `[T any]`, `errors.AsType[T]` (Go 1.26), concrete types
+- **Modernize:** Run `go fix ./...` after upgrades
 
 ### Consistency
 
@@ -53,7 +53,9 @@ A Go development review is NOT complete until all related skills have been execu
 
 ## References
 
-Load these as needed for detailed patterns and examples:
+Install git hooks before first commit — see `references/lefthook-template.md`.
+
+Load as needed:
 
 | Reference | Purpose |
 |-----------|---------|
@@ -70,6 +72,7 @@ Load these as needed for detailed patterns and examples:
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
+| `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 
 ## Quality Gates
 
