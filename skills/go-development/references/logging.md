@@ -236,8 +236,12 @@ func (h *TestHandler) Handle(_ context.Context, r slog.Record) error {
     return nil
 }
 
-func (h *TestHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }
-func (h *TestHandler) WithGroup(_ string) slog.Handler      { return h }
+func (h *TestHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+    return &TestHandler{records: h.records}
+}
+func (h *TestHandler) WithGroup(_ string) slog.Handler {
+    return &TestHandler{records: h.records}
+}
 
 // Query helpers
 func (h *TestHandler) HasMessage(msg string) bool {
@@ -255,12 +259,17 @@ func (h *TestHandler) HasAttr(key, value string) bool {
     h.mu.Lock()
     defer h.mu.Unlock()
     for _, r := range h.records {
+        found := false
         r.Attrs(func(a slog.Attr) bool {
             if a.Key == key && strings.Contains(a.Value.String(), value) {
-                return false // found, stop iteration
+                found = true
+                return false // found, stop iteration for this record
             }
             return true
         })
+        if found {
+            return true
+        }
     }
     return false
 }
