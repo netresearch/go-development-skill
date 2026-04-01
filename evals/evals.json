@@ -6,6 +6,90 @@
       "name": "setup-lefthook",
       "prompt": "Set up git hooks for the Go project at /home/cybot/projects/ofelia/main/ — show me what config to use.",
       "expected_output": "Should provide a lefthook.yml template with go-vet, gofmt, golangci-lint, conventional commits"
+    },
+    {
+      "id": 2,
+      "name": "cron-scheduler",
+      "prompt": "Implement a cron-based job scheduler in Go with named jobs and resilience middleware.",
+      "expected_output": "Should reference netresearch/go-cron, named jobs with WithName, RetryWithBackoff wrappers"
+    },
+    {
+      "id": 3,
+      "name": "golangci-lint-v2",
+      "prompt": "Create a golangci-lint v2 config for production Go code.",
+      "expected_output": "Should produce version: 2 format with errcheck, staticcheck, govet, bodyclose, noctx linters"
+    },
+    {
+      "id": 4,
+      "name": "docker-client",
+      "prompt": "Write a Go Docker client with buffer pooling for container execution.",
+      "expected_output": "Should use fsouza/go-dockerclient with sync.Pool buffer management"
+    },
+    {
+      "id": 5,
+      "name": "error-conventions",
+      "prompt": "Review Go error handling: var InvalidInput = errors.New(\"Invalid input.\")",
+      "expected_output": "Should flag uppercase, punctuation, missing Err prefix; suggest ErrInvalidInput with lowercase no-punctuation message"
+    },
+    {
+      "id": 6,
+      "name": "slog-migration",
+      "prompt": "Migrate a Go project from logrus to log/slog structured logging.",
+      "expected_output": "Should recommend slog.New with JSONHandler, LevelVar, warn against custom Logger wrapper interfaces"
+    },
+    {
+      "id": 7,
+      "name": "go-modernization",
+      "prompt": "Modernize a Go 1.20 codebase to Go 1.26 features.",
+      "expected_output": "Should mention go fix ./..., errors.AsType[T], wg.Go(), any over interface{}"
+    },
+    {
+      "id": 8,
+      "name": "fuzz-testing",
+      "prompt": "Add fuzz tests to a Go URL parser for security edge cases.",
+      "expected_output": "Should show func Fuzz pattern, f.Add seeds, build tag, corpus directory"
+    },
+    {
+      "id": 9,
+      "name": "mutation-testing",
+      "prompt": "Set up mutation testing for a Go project.",
+      "expected_output": "Should recommend go-gremlins with .gremlins.yaml config, mutation score targets"
+    },
+    {
+      "id": 10,
+      "name": "graceful-shutdown",
+      "prompt": "Implement graceful shutdown for a Go HTTP server.",
+      "expected_output": "Should show signal.Notify, context.WithTimeout, srv.Shutdown pattern"
+    },
+    {
+      "id": 11,
+      "name": "retry-backoff",
+      "prompt": "Implement exponential backoff retry in Go with jitter.",
+      "expected_output": "Should show RetryConfig struct, context cancellation, jitter calculation"
+    },
+    {
+      "id": 12,
+      "name": "vulnerability-fix",
+      "prompt": "govulncheck reports stdlib vulnerabilities in my Go project. How to fix?",
+      "expected_output": "Should reference vuln.go.dev, update go.mod version, go mod tidy"
+    },
+    {
+      "id": 13,
+      "name": "package-structure",
+      "prompt": "Design package structure for a Go microservice with HTTP API and scheduler.",
+      "expected_output": "Should show cmd/, core/, web/, config/ layout following skill architecture patterns"
+    },
+    {
+      "id": 14,
+      "name": "table-driven-tests",
+      "prompt": "Write table-driven tests for a Go input parser function.",
+      "expected_output": "Should show test struct slice, t.Run subtests, t.Parallel, t.Helper"
+    },
+    {
+      "id": 15,
+      "name": "ldap-integration",
+      "prompt": "Add LDAP user authentication to a Go service.",
+      "expected_output": "Should use go-ldap/ldap/v3, TLS config, connection pooling, Bind+Search pattern"
     }
   ]
 }
