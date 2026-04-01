@@ -5,7 +5,7 @@ license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
 compatibility: "Requires go 1.21+, golangci-lint, docker."
 metadata:
   author: Netresearch DTT GmbH
-  version: "1.8.1"
+  version: "1.9.0"
   repository: https://github.com/netresearch/go-development-skill
 allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read Write Glob Grep
 ---
@@ -23,13 +23,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ## Required Workflow
 
-**For comprehensive reviews, ALWAYS invoke these related skills:**
-
-1. **Security audit** - Invoke `/netresearch-skills-bundle:security-audit` for OWASP analysis, vulnerability assessment, and security patterns
-2. **Enterprise readiness** - Invoke `/netresearch-skills-bundle:enterprise-readiness` for OpenSSF Scorecard, SLSA compliance, supply chain security
-3. **GitHub project setup** - Invoke `/netresearch-skills-bundle:github-project` for branch protection, rulesets, CI workflow validation
-
-A Go review is NOT complete until all related skills have been executed.
+**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). A review is NOT complete until all are executed.
 
 ## Core Principles
 
@@ -44,6 +38,13 @@ A Go review is NOT complete until all related skills have been executed.
 - One pattern per problem domain
 - Match existing codebase patterns
 - Refactor holistically or not at all
+- Config precedence: defaults < config file < env vars < flags
+
+### Testing
+
+- Build tags isolate test tiers: unit (default), `integration`, `e2e`
+- Always use `t.Parallel()`, `t.Helper()`, table-driven subtests
+- Use `log/slog` directly -- never wrap it in custom Logger interfaces
 
 ### Conventions
 
