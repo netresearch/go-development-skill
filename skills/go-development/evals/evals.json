@@ -26,5 +26,271 @@
         "pattern": "(Bind|Search|TLS|connection pool)"
       }
     ]
+  },
+  {
+    "name": "setup_cron_scheduler",
+    "prompt": "Implement a cron-based job scheduler in Go with named jobs and resilience",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(go-cron|netresearch/go-cron|cron\\.New)"
+      },
+      {
+        "type": "content",
+        "pattern": "(AddFunc|AddJob|WithName|RetryWithBackoff|RetryOnError)"
+      }
+    ]
+  },
+  {
+    "name": "docker_client_integration",
+    "prompt": "Write a Go Docker client that executes containers with buffer pooling",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(go-dockerclient|fsouza|docker\\.NewClient)"
+      },
+      {
+        "type": "content",
+        "pattern": "(sync\\.Pool|bufferPool|Buffer)"
+      }
+    ]
+  },
+  {
+    "name": "retry_with_backoff",
+    "prompt": "Implement exponential backoff retry logic in Go with jitter and context cancellation",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(RetryConfig|MaxAttempts|BackoffFactor|Jitter)"
+      },
+      {
+        "type": "content",
+        "pattern": "(context\\.Done|ctx\\.Err|time\\.After)"
+      }
+    ]
+  },
+  {
+    "name": "graceful_shutdown",
+    "prompt": "Implement graceful shutdown for a Go HTTP server with signal handling",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(signal\\.Notify|os\\.Signal|SIGTERM|SIGINT)"
+      },
+      {
+        "type": "content",
+        "pattern": "(Shutdown|context\\.WithTimeout|srv\\.Shutdown)"
+      }
+    ]
+  },
+  {
+    "name": "table_driven_tests",
+    "prompt": "Write table-driven tests for a Go function that parses user input strings",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(tests?\\s*:?=?\\s*\\[?\\]?struct|tc\\.|tt\\.|test\\.name)"
+      },
+      {
+        "type": "content",
+        "pattern": "(t\\.Run|t\\.Parallel|t\\.Helper)"
+      }
+    ]
+  },
+  {
+    "name": "fuzz_testing",
+    "prompt": "Add fuzz tests to a Go URL parser to find edge cases and security issues",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(func Fuzz|f\\.Fuzz|f\\.Add|testing\\.F)"
+      },
+      {
+        "type": "content",
+        "pattern": "(go test.*-fuzz|fuzz\\s+build\\s+tag|corpus)"
+      }
+    ]
+  },
+  {
+    "name": "mutation_testing_setup",
+    "prompt": "Set up mutation testing for a Go project to measure test quality",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(gremlins|go-gremlins|\\.gremlins\\.yaml)"
+      },
+      {
+        "type": "content",
+        "pattern": "(mutation.*score|unleash|mutant)"
+      }
+    ]
+  },
+  {
+    "name": "golangci_lint_v2_config",
+    "prompt": "Create a golangci-lint v2 configuration for a production Go project",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(version:\\s*\"?2|golangci-lint.*v2)"
+      },
+      {
+        "type": "content",
+        "pattern": "(errcheck|staticcheck|govet|bodyclose|noctx)"
+      }
+    ]
+  },
+  {
+    "name": "error_handling_conventions",
+    "prompt": "Review this Go code for error handling: `var InvalidInput = errors.New(\"Invalid input.\")` and `return fmt.Errorf(\"Failed to process\")`",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(lowercase|no punctuation|ErrInvalidInput|Err\\s*prefix)"
+      },
+      {
+        "type": "content",
+        "pattern": "(%w|errors\\.New|fmt\\.Errorf|wrap)"
+      }
+    ]
+  },
+  {
+    "name": "slog_structured_logging",
+    "prompt": "Migrate a Go project from logrus to structured logging with log/slog",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(log/slog|slog\\.New|slog\\.Logger|TextHandler|JSONHandler)"
+      },
+      {
+        "type": "content",
+        "pattern": "(LevelVar|AddSource|slog\\.Info|slog\\.Error)"
+      }
+    ]
+  },
+  {
+    "name": "api_design_functional_options",
+    "prompt": "Design a Go API using the functional options pattern for a configurable HTTP client",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(Option|func\\(.*\\)|With\\w+|functional option)"
+      },
+      {
+        "type": "content",
+        "pattern": "(WithTimeout|WithRetry|apply|opts)"
+      }
+    ]
+  },
+  {
+    "name": "makefile_standard_targets",
+    "prompt": "Create a Makefile for a Go project with standard CI targets",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(test:|build:|lint:|all:)"
+      },
+      {
+        "type": "content",
+        "pattern": "(-race|-coverprofile|govulncheck|-trimpath)"
+      }
+    ]
+  },
+  {
+    "name": "go_modernization",
+    "prompt": "Modernize a Go 1.20 codebase to use Go 1.26 features like generics and go fix",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(go fix|modernize|errors\\.AsType)"
+      },
+      {
+        "type": "content",
+        "pattern": "(any|interface\\{\\}.*any|generics|\\[T)"
+      }
+    ]
+  },
+  {
+    "name": "package_structure",
+    "prompt": "Design the package structure for a Go microservice with HTTP API, job scheduler, and external integrations",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(cmd/|core/|internal/|web/|config/)"
+      },
+      {
+        "type": "content",
+        "pattern": "(main\\.go|handler|middleware|domain)"
+      }
+    ]
+  },
+  {
+    "name": "context_propagation",
+    "prompt": "Review this Go code for proper context usage: HTTP handlers that spawn goroutines without passing context",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(context\\.Context|ctx|context\\.Background|context\\.WithCancel)"
+      },
+      {
+        "type": "content",
+        "pattern": "(noctx|propagat|goroutine|request.*context)"
+      }
+    ]
+  },
+  {
+    "name": "setup_lefthook",
+    "prompt": "Set up git hooks for a Go project using lefthook with pre-commit and pre-push stages",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(lefthook|lefthook\\.yml)"
+      },
+      {
+        "type": "content",
+        "pattern": "(pre-commit|pre-push|golangci-lint|gofmt|go vet)"
+      }
+    ]
+  },
+  {
+    "name": "vulnerability_scanning",
+    "prompt": "A Go project's govulncheck reports stdlib vulnerabilities. How do I fix them?",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(govulncheck|vuln\\.go\\.dev|go\\.mod)"
+      },
+      {
+        "type": "content",
+        "pattern": "(go mod tidy|go X\\.Y\\.Z|fix version|patch)"
+      }
+    ]
+  },
+  {
+    "name": "config_management",
+    "prompt": "Implement configuration management for a Go service with defaults, file, env vars, and flags",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(defaults|config.*file|env|flag)"
+      },
+      {
+        "type": "content",
+        "pattern": "(precedence|override|os\\.Getenv|viper|kong)"
+      }
+    ]
+  },
+  {
+    "name": "integration_test_docker",
+    "prompt": "Write integration tests for a Go service that depend on a PostgreSQL database using Docker",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(integration|build tag|testcontainers|docker)"
+      },
+      {
+        "type": "content",
+        "pattern": "(TestMain|setup|teardown|t\\.Cleanup)"
+      }
+    ]
   }
 ]
