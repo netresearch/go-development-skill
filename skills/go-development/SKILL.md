@@ -14,12 +14,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ## When to Use
 
-- Building Go services or CLI applications
-- Implementing job scheduling or task orchestration
-- Integrating with Docker API
-- Building LDAP/Active Directory clients
-- Designing resilient systems with retry logic
-- Setting up comprehensive test suites
+Go services/CLIs, job scheduling, Docker API, LDAP/AD clients, resilience patterns, test suites.
 
 ## Required Workflow
 
@@ -74,6 +69,7 @@ Load as needed:
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
+| `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
 
 ## Quality Gates
 

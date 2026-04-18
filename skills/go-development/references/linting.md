@@ -382,6 +382,32 @@ golangci-lint run --fix
     args: --timeout 5m
 ```
 
+### gci Import-Order Pre-commit (Recurring CI Friction)
+
+`gci` import ordering differences between local formats and CI are the most common blocker across Go repos. Enforce the exact ordering that matches `.golangci.yml` before commit.
+
+The lefthook block below is a **fragment to merge into an existing `lefthook.yml`** — not a standalone file. See `references/lefthook-template.md` for a complete starter config that this block slots into.
+
+```bash
+# One-shot fix across the whole module
+gci write --skip-generated -s standard -s default -s localmodule .
+
+# Pre-commit hook fragment (merge into existing lefthook.yml under pre-commit.commands)
+pre-commit:
+  parallel: true
+  commands:
+    gci:
+      glob: "*.go"
+      run: gci write --skip-generated -s standard -s default -s localmodule {staged_files}
+    lint:
+      glob: "*.go"
+      run: golangci-lint run
+```
+
+The `-s standard -s default -s localmodule` ordering must match the `sections:` list under `formatters.settings.gci` in `.golangci.yml`. If the `.golangci.yml` uses `prefix(github.com/org/project)` instead of `localmodule`, the pre-commit `gci` call must match exactly.
+
+**Install**: `go install github.com/daixiang0/gci@latest`
+
 ### Pre-commit Hook (lefthook)
 
 ```yaml
