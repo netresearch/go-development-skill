@@ -132,3 +132,4 @@ Do not batch steps 2-4 across all repos on day one. One pilot, then fan out.
 | Reusable workflow pinned `@main` | Silent behavior drift | Pin to released tag or full SHA |
 | Missing outputs on reusable workflow | Downstream release gates can't get SHA/tag | Declare job outputs + workflow outputs |
 | Per-repo duplication of `golangci-lint` config | Drift across repos; 4× maintenance | Centralize in reusable workflow + `.golangci.yml` template |
+| `version: latest` for `golangci-lint-action` in CI | CI behavior drifts from local runs; rules fire in one but not the other | Pin the golangci-lint version in both; see `references/linting.md` → *golangci-lint: CI vs Local Version Drift* for the dual-`nolint` workaround when pinning isn't possible |
