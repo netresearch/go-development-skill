@@ -74,6 +74,7 @@ Load as needed:
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
+| `references/reusable-workflows.md` | Reusable GitHub Actions workflow patterns, permission propagation, release-gate outputs |
 
 ## Quality Gates
 
