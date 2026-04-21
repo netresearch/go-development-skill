@@ -70,6 +70,7 @@ Load as needed:
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 | `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
+| `references/single-build-release.md` | Single-build release: cross-compile once, reuse for release+container |
 
 ## Quality Gates
 
