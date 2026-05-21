@@ -55,6 +55,7 @@ No build system scripts defined in composer.json. Basic operations:
 - [Linting (golangci-lint)](skills/go-development/references/linting.md)
 - [API Design](skills/go-development/references/api-design.md)
 - [Fuzz Testing](skills/go-development/references/fuzz-testing.md)
+- [Contracts & Invariants](skills/go-development/references/contracts-and-invariants.md)
 - [Mutation Testing](skills/go-development/references/mutation-testing.md)
 - [Makefile Patterns](skills/go-development/references/makefile.md)
 - [Go Modernization](skills/go-development/references/modernization.md)

@@ -65,6 +65,7 @@ Load as needed:
 | `references/linting.md` | golangci-lint v2, staticcheck, code quality |
 | `references/api-design.md` | Bitmask options, functional options, builders |
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
+| `references/contracts-and-invariants.md` | Pre/postconditions, invariants, property tests with rapid/testing-quick — for state machines, protocols, concurrency, money |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
