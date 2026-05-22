@@ -12,10 +12,6 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 # Go Development Patterns
 
-## When to Use
-
-Go services/CLIs, job scheduling, Docker API, LDAP/AD clients, resilience patterns, test suites.
-
 ## Required Workflow
 
 **For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). A review is NOT complete until all are executed.
@@ -65,6 +61,7 @@ Load as needed:
 | `references/linting.md` | golangci-lint v2, staticcheck, code quality |
 | `references/api-design.md` | Bitmask options, functional options, builders |
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
+| `references/contracts-and-invariants.md` | Contracts, invariants, property tests |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
