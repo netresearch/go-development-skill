@@ -41,19 +41,19 @@ Document contracts inline so reviewers (and AI) see intent next to code:
 // Withdraw debits amount from the account.
 //
 // Contract:
-//   pre:  amount > 0
-//   pre:  amount <= balance
+//   pre:  amount > 0                                // caller bug if violated → panic
+//   validation: amount <= balance                   // caller's mistake → typed error
 //   post: balance == old(balance) - amount
 //   inv:  balance >= 0
 func (a *Account) Withdraw(amount Money) error {
-    assertf(amount > 0, "precondition: amount > 0, got %v", amount)
+    invariant.Assertf(amount > 0, "precondition: amount > 0, got %v", amount)
     if amount > a.balance {
         return ErrInsufficientFunds  // validation, not a contract
     }
     before := a.balance
     a.balance -= amount
-    assertf(a.balance == before-amount, "postcondition violated")
-    assertf(a.balance >= 0, "invariant: balance >= 0")
+    invariant.Assertf(a.balance == before-amount, "postcondition violated")
+    invariant.Assertf(a.balance >= 0, "invariant: balance >= 0")
     return nil
 }
 ```
@@ -92,8 +92,8 @@ For hot paths where the check itself is expensive, gate with a build tag:
 
 package invariant
 
-func Assert(cond bool, msg string)        { if !cond { panic("invariant: " + msg) } }
-func Assertf(cond bool, f string, a ...any) { if !cond { panic("invariant: " + fmt.Sprintf(f, a...)) } }
+func Assert(cond bool, msg string)                    { if !cond { panic("invariant: " + msg) } }
+func Assertf(cond bool, format string, args ...any)   { if !cond { panic("invariant: " + fmt.Sprintf(format, args...)) } }
 ```
 
 ```go
@@ -101,8 +101,8 @@ func Assertf(cond bool, f string, a ...any) { if !cond { panic("invariant: " + f
 
 package invariant
 
-func Assert(cond bool, msg string)            {}
-func Assertf(cond bool, f string, a ...any)   {}
+func Assert(cond bool, msg string)                    {}
+func Assertf(cond bool, format string, args ...any)   {}
 ```
 
 Run tests and staging with `-tags=assertions`; ship release builds without. Most code should keep checks always-on — only strip when profiling proves cost.
@@ -154,10 +154,9 @@ func TestAccount_Properties(t *testing.T) {
         ops := rapid.SliceOf(rapid.Uint32Range(0, 10_000)).Draw(t, "ops")
         for _, op := range ops {
             _ = a.Withdraw(Money(op))
-            // Invariant always holds — no need to repeat per op
-            if a.balance < 0 {
-                t.Fatalf("balance went negative: %v", a.balance)
-            }
+            // No explicit assert here: the contract inside Withdraw panics on
+            // any invariant violation, which rapid.Check surfaces with the
+            // failing input sequence.
         }
     })
 }
