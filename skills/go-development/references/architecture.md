@@ -117,6 +117,34 @@ func (j *LocalJob) Run(ctx context.Context) error {
 }
 ```
 
+### State Mutation Completeness
+
+When an operation changes an object's state, update **all** tracking fields in
+the same place — not just the one you came to change. Partial updates leave the
+object internally inconsistent and produce bugs that are hard to trace back to
+their cause.
+
+```go
+// After a run, update every field that describes "what happened",
+// on both the success and failure paths:
+func (j *Job) recordRun(start time.Time, err error) {
+    j.LastRunTime = start
+    j.LastDuration = time.Since(start)
+    j.RunCount++
+    j.LastError = err
+    if err != nil {
+        j.FailureCount++
+        j.Status = StatusFailed
+    } else {
+        j.Status = StatusCompleted
+    }
+}
+```
+
+Anti-pattern: bumping `RunCount` but forgetting `LastError`/`Status`, so a failed
+run still reports as "completed". Keep the mutation in one method so the full set
+is always updated together.
+
 ### Resilient Wrapper
 
 ```go
