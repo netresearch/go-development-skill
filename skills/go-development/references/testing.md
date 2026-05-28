@@ -645,6 +645,28 @@ func TestDockerIntegration(t *testing.T) {
 }
 ```
 
+### Resource Isolation: One Instance Per Test
+
+Give each test its own instance of any **stateful** fixture (scheduler, server,
+store, temp dir). Sharing a mutable instance across tests causes order-dependent
+pollution and flaky failures that often only reproduce under `-shuffle=on` or in CI.
+
+```go
+// Bad — shared, stateful scheduler: one test's jobs leak into the next
+var sharedScheduler *Scheduler // package-level
+
+// Good — each test gets a fresh instance and cleans it up
+func TestScheduler_AddJob(t *testing.T) {
+    s := NewScheduler(context.Background())
+    t.Cleanup(s.Stop)
+    // ... assert against this isolated scheduler
+}
+```
+
+Exception: a **read-only** fixture that no test mutates (see *Parallel with Shared
+Setup* below) may be shared for speed. The rule targets *mutable* state — if a
+test can change it, give each test its own.
+
 ## Coverage and Benchmarks
 
 ### Coverage
