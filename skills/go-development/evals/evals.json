@@ -292,5 +292,19 @@
         "pattern": "(TestMain|setup|teardown|t\\.Cleanup)"
       }
     ]
+  },
+  {
+    "name": "awesome_go_submission",
+    "prompt": "Prepare a pull request to add a Go library to the awesome-go list",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(Forge link|pkg\\.go\\.dev|goreportcard)"
+      },
+      {
+        "type": "content",
+        "pattern": "(alphabetical|non-promotional|ends with a period|single item|one (package|item)|exact project name)"
+      }
+    ]
   }
 ]
