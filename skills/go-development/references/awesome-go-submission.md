@@ -70,7 +70,7 @@ The most common rejection is a PR body the CI can't parse. It does **not** read 
 - [x] The link in README.md matches the forge link above.
 ```
 
-Keep it concise — do not add a marketing "About" section; the non-promotional check scans the whole body. Fetch the live template first (`gh api repos/avelino/awesome-go/contents/.github/PULL_REQUEST_TEMPLATE.md --jq .content | base64 -d`) in case it changed.
+Keep it concise — do not add a marketing "About" section; the non-promotional check scans the whole body. Fetch the live template first in case it changed (the raw media type avoids base64, which is non-portable across GNU/BSD): `gh api repos/avelino/awesome-go/contents/.github/PULL_REQUEST_TEMPLATE.md -H 'Accept: application/vnd.github.raw'`.
 
 ## README entry
 
@@ -105,7 +105,8 @@ git diff --stat   # expect: README.md | 1 +
 git commit -am "Add <project> to <Category>"
 git push -u origin add-<project>
 
-# 5. Open the PR with the body above
+# 5. Save the PR body (the template under "PR body" above) to pr-body.md,
+#    then open the PR
 gh pr create --repo avelino/awesome-go --base main \
   --head <you>:add-<project> \
   --title "Add <project> to <Category>" --body-file pr-body.md
