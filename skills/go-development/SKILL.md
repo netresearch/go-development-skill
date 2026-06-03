@@ -14,7 +14,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ## Required Workflow
 
-**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). A review is NOT complete until all are executed.
+**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). All are required.
 
 ## Core Principles
 
@@ -68,6 +68,7 @@ Load as needed:
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 | `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
 | `references/single-build-release.md` | Single-build release: cross-compile once, reuse for release+container |
+| `references/awesome-go-submission.md` | awesome-go submission: CI-parsed PR body, entry format, name collisions |
 
 ## Quality Gates
 
