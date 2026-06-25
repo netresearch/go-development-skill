@@ -43,7 +43,7 @@ pre-push:
       run: golangci-lint run --timeout=3m
     test:
       # -short only keeps this fast if slow/integration tests skip via
-      # `if testing.Short() { t.Skip(...) }`. Size -timeout to your slowest
+      # testing.Short() guards. Set -timeout to cover your slowest
       # *unguarded* package, or the push fails on every push.
       run: go test -short -timeout=60s ./...
 ```
@@ -51,14 +51,14 @@ pre-push:
 Customize per project: add security scanning (gosec), mutation testing, etc.
 
 **Pre-push timeout pitfall.** The `-short -timeout=60s` smoke-test stays fast
-*only if* slow/integration tests honour `-short` with a
+*only if* slow/integration tests honor `-short` with a
 `if testing.Short() { t.Skip(...) }` guard. A package that ignores `-short`
 (real-Docker integration tests are the classic case) runs in full, blows the
 fixed timeout, and fails the hook on **every** push — which reads like a real
 regression but is not. Diagnose before reaching for `--no-verify`:
 
 ```bash
-go list -deps ./slow/pkg | grep your/changed/pkg   # import-independent of your change?
+go list -deps ./slow/pkg | grep your/changed/pkg   # if this matches, the slow package depends on your change
 go test -short -timeout=300s ./slow/pkg             # what does it actually take?
 ```
 
