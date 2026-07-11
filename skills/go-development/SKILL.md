@@ -1,6 +1,6 @@
 ---
 name: go-development
-description: "Use when developing Go applications, implementing job schedulers or cron, Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), running golangci-lint, or optimizing Go performance."
+description: "Use when developing Go applications, implementing job schedulers or cron (netresearch/go-cron, ofelia), Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), or running golangci-lint."
 license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
 compatibility: "Requires go 1.21+, golangci-lint, docker."
 metadata:
@@ -39,8 +39,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ### Conventions
 
-- Errors: lowercase, no punctuation (`errors.New("invalid input")`)
-- Naming: ID, URL, HTTP (not Id, Url, Http)
+- Naming: ID, URL, HTTP (not Id, Url, Http) — not tool-enforced (ST1003 is off by default)
 - Error wrapping: `fmt.Errorf("failed to process: %w", err)`
 
 ## References
@@ -51,15 +50,15 @@ Load as needed:
 
 | Reference | Purpose |
 |-----------|---------|
-| `references/architecture.md` | Package structure, config management, middleware chains |
+| `references/architecture.md` | Package structure, state mutation completeness |
 | `references/logging.md` | Structured logging with log/slog, migration from logrus |
-| `references/cron-scheduling.md` | go-cron patterns: named jobs, runtime updates, context, resilience |
-| `references/resilience.md` | Retry logic, graceful shutdown, context propagation |
+| `references/cron-scheduling.md` | go-cron patterns: named jobs, runtime updates, resilience, bitmask parser options |
+| `references/resilience.md` | Pointer to go-cron's built-in retry/circuit-breaker/timeout wrappers |
 | `references/docker.md` | Docker client patterns, buffer pooling |
 | `references/ldap.md` | LDAP/Active Directory integration |
-| `references/testing.md` | Test strategies, build tags, table-driven tests |
+| `references/testing.md` | Build tags, resource isolation, race and Fiber v2 gotchas |
 | `references/linting.md` | golangci-lint v2, staticcheck, code quality |
-| `references/api-design.md` | Bitmask options, functional options, builders |
+| `references/api-design.md` | Enum/status defensive handling |
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
 | `references/contracts-and-invariants.md` | Contracts, invariants, property tests |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |

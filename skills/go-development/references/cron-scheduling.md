@@ -221,6 +221,30 @@ fmt.Println("Next run:", result.NextRun)
 fmt.Println("Fields:", result.Fields)
 ```
 
+## Custom Parser Construction (Bitmask Options)
+
+`cron.New()`'s functional options (`cron.WithSeconds()`, etc.) cover the
+common cases. For a standalone parser with a specific field set, go-cron
+exposes a `ParseOption` bitmask (inherited from `robfig/cron/v3`, since
+go-cron is a drop-in replacement):
+
+```go
+parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+schedule, err := parser.Parse("0 9 * * MON-FRI")
+```
+
+Available flags: `Second`, `SecondOptional`, `Minute`, `Hour`, `Dom`, `Month`,
+`Dow`, `DowOptional`, `Descriptor` (allows `@hourly`, `@daily`), `Year`,
+`Hash` (Jenkins-style `H` expressions). Combine with bitwise OR; define
+presets as named constants for reuse:
+
+```go
+const (
+    StandardParser = cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor
+    ExtendedParser = cron.Second | StandardParser
+)
+```
+
 ## Missed Job Catch-Up
 
 Handle jobs missed during downtime:

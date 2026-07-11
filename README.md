@@ -17,13 +17,12 @@ This is an **Agent Skill** following the [open standard](https://agentskills.io)
 
 ## Features
 
-- **Architecture Patterns**: Package structure best practices, job abstraction hierarchy, configuration management (5-layer precedence), middleware chain pattern
-- **Cron Scheduling**: go-cron patterns — named jobs, runtime updates, per-entry context, resilience wrappers, observability, FakeClock testing
-- **Resilience Patterns**: Retry logic with exponential backoff, graceful shutdown, context propagation, error handling strategies
+- **Architecture Patterns**: Package structure conventions, state mutation completeness
+- **Cron Scheduling**: go-cron patterns — named jobs, runtime updates, per-entry context, resilience wrappers, observability, FakeClock testing, bitmask parser options
+- **Resilience Patterns**: go-cron's built-in retry/circuit-breaker/timeout wrappers for scheduled jobs
 - **Docker Integration**: Optimized Docker client patterns, buffer pooling for performance, container execution patterns
 - **LDAP Integration**: Active Directory patterns, user and group management, authentication flows
-- **Testing Strategy**: Test pyramid (unit/integration/e2e), build tags for test isolation, table-driven tests, comprehensive coverage
-- **Performance Optimization**: Buffer pooling, connection reuse, lazy initialization, context deadlines
+- **Testing Strategy**: Build tags for test isolation (unit/integration/e2e), race-condition and Fiber v2 test gotchas, resource isolation
 - **Observability**: Prometheus metrics integration, structured logging, error tracking
 
 ## Installation
@@ -72,8 +71,6 @@ This skill is automatically triggered when:
 - Building LDAP/Active Directory clients
 - Designing resilient systems with retry logic
 - Setting up comprehensive test suites
-- Implementing middleware patterns
-- Optimizing Go application performance
 
 Example queries:
 - "Create a resilient job scheduler in Go"
@@ -89,14 +86,14 @@ Example queries:
 go-development-skill/
 ├── SKILL.md                              # Skill metadata and core patterns
 └── references/
-    ├── architecture.md                   # Package structure, patterns
+    ├── architecture.md                   # Package structure, state mutation completeness
     ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
-    ├── resilience.md                     # Retry, shutdown, recovery
+    ├── resilience.md                     # Pointer to go-cron's resilience wrappers
     ├── docker.md                         # Docker client patterns
     ├── ldap.md                           # LDAP/Active Directory integration
-    ├── testing.md                        # Test strategies and patterns
+    ├── testing.md                        # Build tags, race and Fiber v2 gotchas
     ├── linting.md                        # golangci-lint v2 configuration
-    ├── api-design.md                     # Bitmask options, functional options
+    ├── api-design.md                     # Enum/status defensive handling
     ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
     ├── mutation-testing.md               # Gremlins test quality measurement
     ├── makefile.md                       # Standard Makefile interface
@@ -106,10 +103,8 @@ go-development-skill/
 ## Expertise Areas
 
 ### Architecture Patterns
-- Package structure best practices
-- Job abstraction hierarchy
-- Configuration management (5-layer precedence)
-- Middleware chain pattern
+- Package structure conventions
+- State mutation completeness (avoiding partial updates)
 
 ### Cron Scheduling (go-cron)
 - Named jobs with O(1) lookup
@@ -121,10 +116,8 @@ go-development-skill/
 - Missed job catch-up policies
 
 ### Resilience Patterns
-- Retry logic with exponential backoff
-- Graceful shutdown
-- Context propagation
-- Error handling strategies
+- Retry, circuit-breaker, and timeout wrappers built into go-cron for scheduled jobs
+- Standard library-backed patterns (rate limiting, graceful shutdown) outside the job scheduler
 
 ### Docker Integration
 - Optimized Docker client patterns
@@ -137,30 +130,12 @@ go-development-skill/
 - Authentication flows
 
 ### Testing Strategy
-- Test pyramid (unit/integration/e2e)
-- Build tags for test isolation
-- Table-driven tests
-- Comprehensive coverage
+- Build tags for test isolation (unit/integration/e2e)
+- Race-condition gotchas and fixes
+- Resource isolation (one instance per test)
+- Fiber v2 test patterns
 
-## Configuration Management
-
-5-layer precedence pattern (highest priority last):
-
-1. Built-in defaults (hardcoded)
-2. Configuration file (INI, YAML, TOML)
-3. External source (Docker labels, K8s annotations)
-4. Command-line flags
-5. Environment variables (highest priority)
-
-## Testing Pyramid
-
-```
-       E2E Tests (~5-30s)        # Complete scenarios
-    Integration Tests (~1-5s)    # Real external deps
-  Unit Tests (~<100ms)           # Mocked deps, fast
-```
-
-### Running Tests
+## Running Tests
 
 ```bash
 # Unit tests only (default)
@@ -205,15 +180,6 @@ security:
 test:
 	go test -race ./...
 ```
-
-## Performance Optimization
-
-### Key Patterns
-
-1. **Buffer Pooling**: Reuse allocations with `sync.Pool`
-2. **Connection Reuse**: Single client instance, connection pooling
-3. **Lazy Initialization**: Initialize resources on first use
-4. **Context Deadlines**: Prevent runaway operations
 
 ## Related Skills
 

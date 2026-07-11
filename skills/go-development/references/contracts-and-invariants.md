@@ -176,7 +176,7 @@ For protocols, model the state machine and let `rapid` drive transitions. The co
 
 ## Cross-References
 
-- `references/testing.md` — table-driven tests, build tags
+- `references/testing.md` — build tags, resource isolation, race-condition gotchas
 - `references/fuzz-testing.md` — input-driven discovery (complementary to property tests)
 - `references/resilience.md` — panic recovery boundaries (only at goroutine roots, never around contracts)
 - security-audit-skill `references/authentication-patterns.md` — authorization invariants
