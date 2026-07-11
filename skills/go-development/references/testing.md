@@ -3,18 +3,23 @@
 ## Build Tags for Test Isolation
 
 Three-tier convention: unit tests are untagged and run by default; integration
-and e2e tests opt in via `//go:build`.
+and e2e tests opt in via `//go:build`. The tag must be the first line of the
+file, followed by a blank line before the package clause.
 
 ```go
-// Unit tests — no tag, run by default
+// File: job_test.go — unit tests, no tag, run by default
 package core
+```
 
-// Integration tests — require real external deps (Docker, see references/docker.md)
+```go
+// File: docker_integration_test.go — require real external deps (Docker, see references/docker.md)
 //go:build integration
 
 package core
+```
 
-// E2E tests — complete system
+```go
+// File: workflow_e2e_test.go — complete system
 //go:build e2e
 
 package e2e
