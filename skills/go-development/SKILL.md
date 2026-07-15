@@ -14,7 +14,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ## Required Workflow
 
-**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). All are required.
+**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection).
 
 ## Core Principles
 
@@ -64,6 +64,7 @@ Load as needed:
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
+| `references/dependencies.md` | Upgrades: `go get -u all`, majors, build-set scoping |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 | `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
 | `references/single-build-release.md` | Single-build release: cross-compile once, reuse for release+container |
@@ -83,7 +84,7 @@ go test -race ./...                # Race detection
 
 ## Stdlib Vulnerability Fixes
 
-When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`. Use PR branches for repos with branch protection.
+When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`.
 
 ---
 
