@@ -14,7 +14,7 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 ## Required Workflow
 
-**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection). All are required.
+**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection).
 
 ## Core Principles
 
@@ -84,7 +84,7 @@ go test -race ./...                # Race detection
 
 ## Stdlib Vulnerability Fixes
 
-When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`. Use PR branches for repos with branch protection.
+When `govulncheck` reports stdlib vulnerabilities: check fix version via `vuln.go.dev`, update `go X.Y.Z` in `go.mod`, run `go mod tidy`.
 
 ---
 
