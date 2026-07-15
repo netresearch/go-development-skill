@@ -36,8 +36,7 @@ a dependency is current:
 
 ```bash
 for m in $(go list -m -f '{{if not .Indirect}}{{.Path}}{{end}}' all); do
-  base=${m%/v[0-9]*}
-  cur=$(echo "$m" | grep -oE '/v[0-9]+$' | tr -d '/v'); cur=${cur:-1}
+  if [[ "$m" =~ /v([0-9]+)$ ]]; then cur="${BASH_REMATCH[1]}"; base="${m%/v*}"; else cur=1; base="$m"; fi
   go list -m "$base/v$((cur + 1))@latest" >/dev/null 2>&1 && echo "MAJOR AVAILABLE: $m -> $base/v$((cur + 1))"
 done
 ```
@@ -55,9 +54,10 @@ for code you do not ship.
 Separate "outdated" from "outdated **and in the build**" before reporting:
 
 ```bash
-go list -deps -f '{{with .Module}}{{.Path}}{{end}}' ./... | sort -u > /tmp/inbuild.txt
-go list -m -u all | grep '\[' | awk '{print $1}' | sort > /tmp/pending.txt
-comm -12 /tmp/inbuild.txt /tmp/pending.txt   # outdated AND linked in — the real list
+# outdated AND linked into the binary — the real list
+comm -12 \
+  <(go list -deps -f '{{with .Module}}{{.Path}}{{end}}' ./... | grep -v '^$' | sort -u) \
+  <(go list -m -u all | grep '\[' | awk '{print $1}' | sort)
 ```
 
 Empty output means every module you actually ship is current; the remainder is
