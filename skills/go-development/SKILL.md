@@ -64,6 +64,7 @@ Load as needed:
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
+| `references/dependencies.md` | Upgrades: `go get -u all`, majors, build-set scoping |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 | `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
 | `references/single-build-release.md` | Single-build release: cross-compile once, reuse for release+container |
