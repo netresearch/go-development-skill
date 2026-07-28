@@ -21,7 +21,7 @@ Verify all of these before starting — most are blocking CI checks:
 - **Open-source license** — any [OSI-approved](https://opensource.org/licenses/alphabetical) license. *No license = all-rights-reserved = ineligible*, even if the repo is public.
 - **`go.mod` at repo root** and **≥ 1 SemVer tag** (`vX.Y.Z`).
 - **`pkg.go.dev` page is live** for the module (visit it once / `GOPROXY=https://proxy.golang.org go get <module>@<tag>` to trigger indexing).
-- **Go Report Card grade A-, A, or A+** — visit `goreportcard.com/report/<module>` and click **Refresh** so it reflects your latest tag (the score caches on an old version otherwise).
+- ~~**Go Report Card grade A-, A, or A+**~~ — goreportcard.com was sunset in 2026 and no longer issues grades, so this gate cannot be satisfied as written. Check the current awesome-go contribution guidelines before submitting; expect the requirement to have been dropped or replaced.
 - **A reachable coverage-service link** (Codecov/Coveralls) — a README badge is *not* enough; the bot fetches the URL.
 - Category must have **≥ 3 items** (only relevant if creating a new category).
 
@@ -44,7 +44,7 @@ The most common rejection is a PR body the CI can't parse. It does **not** read 
 
 - [x] Forge link (github.com, gitlab.com, etc): https://github.com/<org>/<project>
 - [x] pkg.go.dev: https://pkg.go.dev/github.com/<org>/<project>
-- [x] goreportcard.com: https://goreportcard.com/report/github.com/<org>/<project>
+- [ ] goreportcard.com — service sunset; see the requirement note above
 - [x] Coverage service link (codecov, coveralls, etc.): https://app.codecov.io/gh/<org>/<project>
 
 ## Pre-submission checklist
@@ -57,7 +57,7 @@ The most common rejection is a PR body the CI can't parse. It does **not** read 
 - [x] `go.mod` file and SemVer release (vX.Y.Z)
 - [x] Open source license (<LICENSE>)
 - [x] pkg.go.dev link in docs
-- [x] goreportcard link (grade A- or better)
+- [ ] goreportcard link — service sunset; see the requirement note above
 - [x] Coverage service link
 - [x] Continuous integration (GitHub Actions)
 
