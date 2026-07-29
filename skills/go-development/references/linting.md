@@ -245,6 +245,48 @@ the dual-nolint pattern for edge cases.
 
 ## Common Linter Gotchas
 
+### The Default Output Cap Silently Truncates
+
+golangci-lint stops at `max-issues-per-linter: 50` and `max-same-issues: 3` by
+default, and says nothing about what it dropped. Any count you read off a run
+is a floor, not a total.
+
+This bites hardest when taking stock before a cleanup: a report of "50 findings"
+that is really 123 turns an afternoon's work into a week's. The tell is a run
+that reports exactly 50, or two runs that list different files while reporting
+the same total.
+
+```bash
+# For an inventory, uncap it:
+golangci-lint run --max-issues-per-linter=0 --max-same-issues=0
+```
+
+Consider uncapping in the config as well. A cap also lets a regression hide
+behind it: once a linter is at its limit, the next new finding is invisible.
+
+```yaml
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # Findings on a line another linter already reported are dropped by default.
+  uniq-by-line: false
+```
+
+### A Cache Entry Outlives Its Worktree
+
+golangci-lint can report findings with paths that no longer exist — typically
+after a git worktree is removed, when a shared cache still holds its analysis.
+The giveaway is `no such file or directory` warnings naming a deleted path
+alongside the findings.
+
+```bash
+golangci-lint cache clean
+```
+
+Treat findings whose paths you cannot open as cache artifacts, not as code
+problems, and re-run before acting on them.
+
+
 Specific linter rules that frequently trip up developers:
 
 ### dupl: Test Function Duplication
