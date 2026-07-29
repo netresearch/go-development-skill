@@ -108,6 +108,21 @@ jobs:
             echo "::warning::Mutation score below 60%"
           fi
 
+      # The `|| echo "0"` above is load-bearing in a way that hides failure:
+      # gremlins compiles the packages it mutates, and one it cannot build is
+      # reported as "[build failed]" — after which it stops without printing
+      # "Test efficacy" at all. The fallback then makes the job publish 0% and
+      # pass, which reads as a measured result rather than a run that never
+      # happened. Check for it explicitly.
+      - name: Fail on packages gremlins could not build
+        if: always()
+        run: |
+          [ -f output.txt ] || exit 0
+          grep -q '\[build failed\]' output.txt || exit 0
+          echo "::error::gremlins could not build these packages:"
+          grep '\[build failed\]' output.txt
+          exit 1
+
       - name: Upload reports
         uses: actions/upload-artifact@v4
         with:
@@ -128,6 +143,30 @@ For efficiency, only test mutations in changed files on PRs:
     BASE_REF="${{ github.event.pull_request.base.sha }}"
     gremlins unleash --config=.gremlins.yaml --diff "$BASE_REF"
 ```
+
+## A Score of 0% Means "Nothing Ran"
+
+gremlins does not partially degrade. If any package it mutates fails to
+compile, it prints `[build failed]` for that package and stops — no efficacy
+line is emitted at all. Every score-extraction idiom in the wild falls back to
+`0` when the line is missing, so the job publishes **0%** and passes.
+
+This is easy to ship and hard to notice, because a low score looks like a
+test-quality problem rather than a run that never happened.
+
+Two things cause it in practice:
+
+- **Generated sources that are not committed.** templ, sqlc, mockgen and
+  friends produce `*.go` files that CI must generate before gremlins runs.
+  A repo where `go test` works locally (generated files present) fails here.
+  Pass the codegen command in a pre-build step.
+- **Build tags.** A package that only compiles under `integration` or `e2e`
+  fails the default build.
+
+Put the `[build failed]` check in its **own step**. The run step usually
+carries `continue-on-error: true` so a low score does not fail the workflow —
+and that would swallow the build check too. A missing score is a threshold
+question; a package that does not compile is not.
 
 ## Makefile Integration
 
