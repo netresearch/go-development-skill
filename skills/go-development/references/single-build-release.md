@@ -305,3 +305,16 @@ Works for both tag push and workflow_dispatch "rebuild tag" backfills, so `main.
 - [reusable-workflows.md](./reusable-workflows.md) — how caller/reusable permission propagation works
 - [docker.md](./docker.md) — Docker client patterns in Go code (not Dockerfile)
 - github-project-skill [workflow-bash-patterns.md](https://github.com/netresearch/github-project-skill/blob/main/skills/github-project/references/workflow-bash-patterns.md) — bash inside `run:` gotchas
+
+## GoReleaser changelog: `use: github` ignores your filters
+
+With `changelog.use: github`, GoReleaser builds the changelog from the GitHub compare API and **silently ignores `filters.exclude`** — every `chore(deps)` / bot commit leaks into the release notes. For the exclude filters to apply, use `use: git`:
+
+```yaml
+changelog:
+  use: git
+  filters:
+    exclude:
+      - "^chore\\(deps\\)"
+      - "^ci:"
+```
