@@ -305,3 +305,16 @@ Works for both tag push and workflow_dispatch "rebuild tag" backfills, so `main.
 - [reusable-workflows.md](./reusable-workflows.md) — how caller/reusable permission propagation works
 - [docker.md](./docker.md) — Docker client patterns in Go code (not Dockerfile)
 - github-project-skill [workflow-bash-patterns.md](https://github.com/netresearch/github-project-skill/blob/main/skills/github-project/references/workflow-bash-patterns.md) — bash inside `run:` gotchas
+
+## GoReleaser changelog: `github-native` ignores your filters
+
+With `changelog.use: github-native`, GoReleaser delegates to GitHub's generated-release-notes API and **ignores `sort` and `filters`** — the [upstream docs](https://goreleaser.com/customization/changelog/) mark both options "Disabled when using 'github-native'", so every `chore(deps)` / bot commit leaks into the release notes. Switch to an implementation where `filters.exclude` applies (`git`, `github`, `gitlab`, `gitea`):
+
+```yaml
+changelog:
+  use: git
+  filters:
+    exclude:
+      - "^chore\\(deps\\)"
+      - "^ci:"
+```
