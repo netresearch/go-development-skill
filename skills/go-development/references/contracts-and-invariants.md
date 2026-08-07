@@ -164,10 +164,62 @@ func TestAccount_Properties(t *testing.T) {
 
 For protocols, model the state machine and let `rapid` drive transitions. The contract panics inside the implementation will surface any reachable invariant violation.
 
+## An Unreachable Branch Still Has a Direction
+
+When a guard splits on a sentinel and the remaining branch cannot be reached
+today, its behaviour is still a decision — it is the behaviour that ships the
+day the assumption stops holding. Choose it by which direction is safe then,
+not by which looks symmetric now.
+
+The trigger is a `switch` or `if`/`else` over a library's error values where
+the library currently returns only one of them:
+
+```go
+ckie, err := r.Cookie(name)
+if errors.Is(err, http.ErrNoCookie) {
+    challenge(w)                 // no cookie: nothing to clear
+    return
+}
+if err != nil {
+    clearCookie(w)               // unreachable today -- but which way should it fail?
+    challenge(w)
+    return
+}
+```
+
+`(*http.Request).Cookie` returns `ErrNoCookie` and nothing else, so the second
+branch is dead. It is also pointed the wrong way: the whole purpose of the
+first branch is *"we could not read a cookie, so do not emit a deletion"*, and
+the fallback does the opposite. If a future stdlib release ever returns another
+error there, the dead branch wakes up and re-creates the bug the guard was
+written to fix — and in this case attacker-influenced, because `readCookies`
+already degrades to `ErrNoCookie` when the cookie-count cap trips.
+
+Prefer collapsing to a single branch when every error means the same thing:
+
+```go
+ckie, err := r.Cookie(name)
+if err != nil {
+    challenge(w)                 // any lookup failure: nothing to clear
+    return
+}
+```
+
+This also removes the `errors.Is` split, which was only ever justified when the
+two branches genuinely differ. Keep the split — with a deliberate, documented
+fallback — when a future unknown error really should behave differently from
+the sentinel.
+
+Applies to any guard whose fallback is currently dead: a `default:` in a switch
+over a closed enum, an `else` after an exhaustive type assertion, a
+`case ErrNotFound` chain. Write the branch that fails safe, or delete it and
+say in the code why one branch is enough.
+
 ## Common Mistakes
 
 | Mistake | Fix |
 |---------|-----|
+| Dead fallback branch pointed the unsafe way | Fail safe, or collapse to one branch — see above |
 | Panicking on user input | Return a typed error; reserve panic for impossible states |
 | Sprinkling `assert` decoratively in glue code | Gate by domain — state machines, protocols, money, authz |
 | Postcondition that re-implements the function | Postcondition states the *property*, not the steps |
