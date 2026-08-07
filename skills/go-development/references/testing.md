@@ -367,6 +367,54 @@ func assertUserExists(t *testing.T, store UserStore, username string) {
 }
 ```
 
+### Reap a Daemonized Helper by Process Group
+
+A test that starts a helper server with `exec.Command` and kills it in cleanup
+looks correct and is not. `cmd.Process.Kill()` kills only the process it
+started — typically `sh -c "..."` — and the real server survives as an orphan,
+still holding the stdout it inherited from the test binary. `go test` then
+reports, *after every test has already passed*:
+
+```text
+PASS
+*** Test I/O incomplete 1m0s after exiting.
+exec: WaitDelay expired before I/O complete
+FAIL    example.com/pkg/test
+```
+
+`PASS` followed by `FAIL` is the signature. It is timing-dependent, so it
+reproduces on some runs and not others, and the orphan also holds the port —
+which makes the *next* run connect to a stale server from the previous one and
+produce a wrong diagnosis.
+
+Start the helper in its own process group and kill the group:
+
+```go
+cmd := exec.Command(shPath, "-c", command)
+cmd.Stdout = os.Stdout
+cmd.Stderr = os.Stderr
+cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+if err := cmd.Start(); err != nil {
+    t.Fatalf("can't start helper: %v", err)
+}
+
+t.Cleanup(func() {
+    // Negative PID = the whole group, so children die with the shell.
+    if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+        t.Logf("can't kill process group of %d: %v", cmd.Process.Pid, err)
+    }
+})
+```
+
+`syscall.SysProcAttr.Setpgid` is Unix-only — guard the file with
+`//go:build !windows`, or use `os/exec`'s `Cancel` plus `WaitDelay` when the
+suite must also run on Windows.
+
+Verify the fix by what it leaves behind, not by the exit code alone: after a
+green run the port must be free (`ss -ltnp | grep :<port>`). A run that passes
+while leaking the daemon has not been fixed, it has been raced.
+
 ## Related
 
 - `references/fuzz-testing.md` — fuzz testing patterns, security-focused seeds
