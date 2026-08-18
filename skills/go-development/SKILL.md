@@ -52,23 +52,24 @@ Load as needed:
 |-----------|---------|
 | `references/architecture.md` | Package structure, state mutation completeness |
 | `references/logging.md` | Structured logging with log/slog, migration from logrus |
-| `references/cron-scheduling.md` | go-cron patterns: named jobs, runtime updates, resilience, bitmask parser options |
+| `references/cron-scheduling.md` | go-cron patterns: named jobs, runtime updates, resilience |
 | `references/resilience.md` | Pointer to go-cron's built-in retry/circuit-breaker/timeout wrappers |
 | `references/docker.md` | Docker client patterns, buffer pooling |
 | `references/ldap.md` | LDAP/Active Directory integration |
-| `references/testing.md` | Build tags, resource isolation, race and Fiber v2 gotchas |
-| `references/linting.md` | golangci-lint v2, staticcheck, code quality |
+| `references/testing.md` | Build tags, resource isolation, race gotchas |
+| `references/linting.md` | golangci-lint v2, staticcheck |
 | `references/api-design.md` | Enum/status defensive handling |
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
 | `references/contracts-and-invariants.md` | Contracts, invariants, property tests |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
-| `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]`, `wg.Go()` |
+| `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]` |
 | `references/dependencies.md` | Upgrades: `go get -u all`, majors, build-set scoping |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
+| `references/branch-protection.md` | Ruleset watermark: three-ruleset gate, bypass modes |
 | `references/reusable-workflows.md` | Reusable Actions workflow callers, permission propagation, release-gate outputs |
 | `references/single-build-release.md` | Single-build release: cross-compile once, reuse for release+container |
-| `references/awesome-go-submission.md` | awesome-go submission: CI-parsed PR body, entry format, name collisions |
+| `references/awesome-go-submission.md` | awesome-go submission: CI-parsed PR body, name collisions |
 
 ## Quality Gates
 
