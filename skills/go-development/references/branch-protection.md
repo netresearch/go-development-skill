@@ -70,3 +70,41 @@ Copy a live ruleset as the template instead of hand-writing JSON:
 `gh api repos/netresearch/go-cron/rulesets --jq '.[]|{id,name}'`, then `GET`
 the id and adjust. Org-level rulesets would replace the per-repo copies, but
 require a paid GitHub plan (the free org tier returns 403).
+
+## CODEOWNERS and reviewer routing
+
+The standard file (copied verbatim across the Go repos):
+
+```text
+* @CybotTM @netresearch/netresearch
+
+/.github/workflows/ @CybotTM @netresearch/sec
+/SECURITY.md @CybotTM @netresearch/sec
+```
+
+No per-repo maintainer teams exist — use the org-wide teams. Two vacuity
+traps, both observed live: a CODEOWNERS entry naming a **nonexistent team** is
+silently ignored, and so is one naming a team **without read access to the
+repo** (the `netresearch` team had access to none of the seven Go repos, so
+the default-owner line never routed anywhere). After editing CODEOWNERS,
+verify access: `gh api orgs/ORG/teams/TEAM/repos/ORG/REPO` — grant with
+`-X PUT -f permission=pull`.
+
+The 1-approval rule is satisfied on solo-maintained repos by the org-shared
+`pr-quality.yml` caller (`auto-approve-maintainers: true`). A repo without it
+has **no approval source**: nothing can merge, and ruleset bypass does not
+apply to a plain `gh pr merge` (only to the explicit admin-bypass path, which
+is banned). Ship the workflow before or with the ruleset.
+
+## Two rollout traps
+
+- **A required check must always report.** Deriving required contexts from a
+  push run on main is not enough: a workflow whose `pull_request` trigger has
+  `paths:` filters never starts on non-matching PRs, and the required check
+  hangs "expected" forever. Remove path filters from the PR trigger of any
+  workflow whose job is a required context.
+- **Repo merge methods must include the ruleset's allowed method.** A repo
+  with `allow_merge_commit: false` plus a ruleset allowing only `merge` can
+  merge nothing at all. Check `gh api repos/OWNER/REPO --jq
+  '{allow_merge_commit, allow_rebase_merge, allow_squash_merge}'` when
+  applying the ruleset.
