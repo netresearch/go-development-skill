@@ -24,6 +24,10 @@
       {
         "type": "content",
         "pattern": "(Bind|Search|TLS|connection pool)"
+      },
+      {
+        "type": "content",
+        "pattern": "go-ldap/ldap"
       }
     ]
   },
@@ -52,6 +56,10 @@
       {
         "type": "content",
         "pattern": "(sync\\.Pool|bufferPool|Buffer)"
+      },
+      {
+        "type": "content",
+        "pattern": "(fsouza/go-dockerclient|sync\\.Pool)"
       }
     ]
   },
@@ -80,6 +88,10 @@
       {
         "type": "content",
         "pattern": "(Shutdown|context\\.WithTimeout|srv\\.Shutdown)"
+      },
+      {
+        "type": "content",
+        "pattern": "(signal\\.Notify|Shutdown\\()"
       }
     ]
   },
@@ -94,6 +106,10 @@
       {
         "type": "content",
         "pattern": "(t\\.Run|t\\.Parallel|t\\.Helper)"
+      },
+      {
+        "type": "content",
+        "pattern": "(t\\.Run|t\\.Parallel)"
       }
     ]
   },
@@ -122,6 +138,10 @@
       {
         "type": "content",
         "pattern": "(mutation.*score|unleash|mutant)"
+      },
+      {
+        "type": "content",
+        "pattern": "(gremlins|\\.gremlins\\.yaml)"
       }
     ]
   },
@@ -136,6 +156,10 @@
       {
         "type": "content",
         "pattern": "(errcheck|staticcheck|govet|bodyclose|noctx)"
+      },
+      {
+        "type": "content",
+        "pattern": "(bodyclose|noctx)"
       }
     ]
   },
@@ -206,6 +230,10 @@
       {
         "type": "content",
         "pattern": "(any|interface\\{\\}.*any|generics|\\[T)"
+      },
+      {
+        "type": "content",
+        "pattern": "(errors\\.AsType|wg\\.Go)"
       }
     ]
   },
@@ -220,6 +248,10 @@
       {
         "type": "content",
         "pattern": "(main\\.go|handler|middleware|domain)"
+      },
+      {
+        "type": "content",
+        "pattern": "(cmd/|internal/|core/)"
       }
     ]
   },
@@ -262,6 +294,10 @@
       {
         "type": "content",
         "pattern": "(go mod tidy|go X\\.Y\\.Z|fix version|patch)"
+      },
+      {
+        "type": "content",
+        "pattern": "(vuln\\.go\\.dev|go mod tidy)"
       }
     ]
   },
