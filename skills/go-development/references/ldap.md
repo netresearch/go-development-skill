@@ -118,6 +118,32 @@ func (p *ClientPool) Put(client *Client) {
 }
 ```
 
+### Identity leak: rebind pooled connections after a user bind
+
+A password check binds a pooled connection **as the end user** (`conn.Bind(userDN, userPassword)`). If the pool returns that connection without restoring the service-account bind, the next borrower runs under the user's identity — an authorization leak. The pool above avoids it by rebinding as the service account on `Get`; if yours does not, rebind on the release path (and drop the connection if the rebind fails, rather than pooling a mis-bound one):
+
+```go
+func (l *LDAP) rebindPooledConnToService(c *ldap.Conn) {
+    if err := c.Bind(l.serviceDN, l.servicePW); err != nil {
+        _ = c.Close() // don't return a mis-bound connection to the pool
+    }
+}
+```
+
+**Testing this leak — do not drain the pool.** The obvious test (perform a password check, then `Get` connections back and inspect them) is a **false-green guard**: the pool's health check runs a probe `Search` on release, which fails on a connection bound as an unprivileged user and **discards it before you can observe it**, so the drain never sees the leak and the test passes even with the fix removed. Instead, inspect a *specific* connection deterministically:
+
+```go
+// One-connection pool (cache-warm any internal lookup so the check needs only
+// the bind connection), bind it as the user, then assert the identity directly.
+conn, _ := client.pool.Get(ctx)
+_ = conn.Bind(userDN, userPassword)          // simulate the verification bind
+client.rebindPooledConnToService(conn)       // the code under test
+who, _ := conn.WhoAmI(nil)                    // RFC 4532
+require.Contains(t, who.AuthzID, serviceAccount) // not the user
+```
+
+Verify it red-green: with the rebind removed, `WhoAmI` still reports the user.
+
 ## User Operations
 
 ### User Model
