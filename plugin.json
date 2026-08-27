@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "go-development",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Production-grade Go development patterns for resilient services",
   "author": {
     "name": "Netresearch DTT GmbH",
