@@ -100,12 +100,12 @@ paths:
 
 ```
 go 1.26            # language version AND compatibility baseline
-toolchain go1.27.0 # which toolchain to fetch and build with
+toolchain go1.27.1 # which toolchain to fetch and build with
 ```
 
 The `toolchain` line decides what compiles. The `go` line decides what the
 result *behaves* like: Go compiles with that version's compatibility defaults
-and bakes them into the binary. So a module built by go1.27.0 while declaring
+and bakes them into the binary. So a module built by go1.27.1 while declaring
 `go 1.26` ships 1.26 semantics for everything 1.27 changed.
 
 **Only the main module's directive counts** (or the workspace's `go.work`). A
@@ -131,8 +131,9 @@ reads the *package* — neither reports the `go` directive itself, which is
 
 Those two settings are 1.27 behaviour changes, pinned back. Raise the main
 module's `go` directive to 1.27 and the `DefaultGODEBUG` line disappears
-entirely — same toolchain, same tree, only the directive differs. That two-build diff is the way to show what
-a floor actually costs, and it takes one minute.
+entirely — same toolchain, same tree, only the directive differs. That
+two-build diff is the way to show what a floor actually costs, and it takes
+one minute.
 
 One documented exception, from [go.dev/doc/godebug](https://go.dev/doc/godebug):
 *"GODEBUGs introduced for security releases will have the new behavior apply to
