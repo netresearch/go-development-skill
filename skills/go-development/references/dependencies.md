@@ -104,22 +104,34 @@ toolchain go1.27.0 # which toolchain to fetch and build with
 ```
 
 The `toolchain` line decides what compiles. The `go` line decides what the
-result *behaves* like: Go compiles a module declaring an older version with
-that version's compatibility defaults and bakes them into the binary. So a
-module built by go1.27.0 while declaring `go 1.26` ships 1.26 semantics for
-everything 1.27 changed.
+result *behaves* like: Go compiles with that version's compatibility defaults
+and bakes them into the binary. So a module built by go1.27.0 while declaring
+`go 1.26` ships 1.26 semantics for everything 1.27 changed.
+
+**Only the main module's directive counts** (or the workspace's `go.work`). A
+dependency's `go` line does not reach the importing binary's defaults —
+verified by building an app at `go 1.26` against a dependency at `go 1.24`,
+then raising only the app: the dependency's version never showed up either way.
 
 Read it back rather than reasoning about it:
 
 ```bash
 go build -o /tmp/probe . && go version -m /tmp/probe | grep -E 'DefaultGODEBUG|^/'
-# /tmp/probe: go1.27.0
+# /tmp/probe: go1.27.1
 #     build   DefaultGODEBUG=tracebacklabels=0,x509sslcertoverrideplatform=0
+
+# Same answer without building, straight from the main package:
+go list -f '{{.DefaultGODEBUG}}' .
+# tracebacklabels=0,x509sslcertoverrideplatform=0
 ```
 
-Those two settings are 1.27 behaviour changes, pinned back. Raise the `go`
-directive and the `DefaultGODEBUG` line disappears — same toolchain, same
-tree, only the directive differs. That two-build diff is the way to show what
+Both were measured on go1.27.1. `go version -m` reads the *binary*, `go list`
+reads the *package* — neither reports the `go` directive itself, which is
+`go mod edit -json | jq -r '.Go'` if that is what you want.
+
+Those two settings are 1.27 behaviour changes, pinned back. Raise the main
+module's `go` directive to 1.27 and the `DefaultGODEBUG` line disappears
+entirely — same toolchain, same tree, only the directive differs. That two-build diff is the way to show what
 a floor actually costs, and it takes one minute.
 
 One documented exception, from [go.dev/doc/godebug](https://go.dev/doc/godebug):
