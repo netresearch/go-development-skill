@@ -1,6 +1,6 @@
 {
   "name": "go-development",
-  "version": "1.15.0",
+  "version": "1.15.1",
   "description": "Production-grade Go development patterns for resilient services",
   "author": {
     "name": "Netresearch DTT GmbH",
