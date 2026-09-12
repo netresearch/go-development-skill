@@ -120,6 +120,10 @@ mapstructure change stops quoting the offending value back in a decode error, so
 any message a provider or CLI surfaces changes wording without changing
 behaviour. Grep for tests asserting on it, and put it in the release notes.
 
+"No advisory" is not "unaffected". The archived module leaks the same value into
+the same message; it has no advisory because nobody is filing them for it. Read
+an absent advisory as an absent maintainer.
+
 ## Moving to a standard-library replacement: check the acceptance set
 
 Go 1.27 ships `uuid`, which makes `github.com/hashicorp/go-uuid` and friends
@@ -152,17 +156,27 @@ asserting nothing.
 
 Two more things the swap changes:
 
-- **Rejection wording.** `go-uuid` returned `uuid is improperly formatted`; the
-  standard library returns `invalid uuid`. Anywhere that interpolates the parse
-  error into a user-facing message now reads differently.
+- **Rejection wording.** `go-uuid` returned one of four messages depending on
+  which check failed — `uuid string is wrong length`, `uuid is improperly
+  formatted` for a misplaced separator, a raw `encoding/hex` error, or `decoded
+  hex is the wrong length`. The standard library returns `invalid uuid` for all
+  of them. Anywhere that interpolates the parse error into a user-facing message
+  now reads differently, and a test matching on one of the four stops matching.
 - **The generated value's shape.** `go-uuid`'s `GenerateUUID` formatted sixteen
-  random bytes *without* setting the version and variant bits, so it never
-  produced a valid v4. `uuid.New()` does. If the value is stored, say so.
+  random bytes *without* setting the version and variant bits, so it did not
+  produce a v4 by construction — about one output in 64 was a valid v4 by
+  chance, which is why "never" is the wrong word and a sampling check is the
+  wrong test. `uuid.New()` sets both. If the value is stored, say so.
 
-`uuid.UUID` is a `[16]byte`, so a `%s` verb renders raw bytes unless `String` is
-reached. That form compiles and `go vet` accepts it, so assert the rendering
-somewhere — and assert it by calling the production code, not by rebuilding the
-expression in the test.
+One thing that is *not* a hazard here, because it is easy to assume it is:
+`uuid.UUID` is a `[16]byte`, but `String` has a **value** receiver, so a `%s`
+verb reaches it for both a value and a pointer. There is no plain `%s` spelling
+that prints raw bytes. Getting them requires deliberately leaving the type —
+`u[:]`, `[16]byte(u)`, `%x` — which is not something a refactor does by accident.
+
+Assert the rendering only where production code adds formatting of its own, such
+as composing the value into a larger identifier. Assert it by calling that code,
+never by rebuilding its expression in the test.
 
 ## The `go` directive is not only a floor — it selects runtime behaviour
 

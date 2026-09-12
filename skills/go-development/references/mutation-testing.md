@@ -239,16 +239,38 @@ Two rules follow:
 ```bash
 cp pkg/thing.go /tmp/thing.bak
 # ... inject, then:
-go build ./... >/dev/null 2>&1 || { echo "BUILD BROKEN — not evidence"; }
-go test ./... ; echo "exit=$?"
+if ! out=$(go vet ./... 2>&1); then
+  echo "DOES NOT BUILD — not evidence:"; echo "$out"
+else
+  go test ./...; echo "exit=$?"
+fi
 cp /tmp/thing.bak pkg/thing.go
 ```
+
+The guard has to come first and it has to stop. `go build ... || echo warning`
+prints the warning and then runs the suite anyway, so the compile failure still
+reaches the exit code the loop reads — the sample would demonstrate the defect it
+exists to prevent. Keep the diagnostic rather than discarding it to
+`/dev/null`: "which mutation failed to build" is the thing you need next.
+
+`go vet` is the gate rather than `go build`, because `go test` runs vet too. A
+mutation that builds and only trips vet — a `%d` verb given a string, say —
+passes a `go build` guard and then produces the identical
+`FAIL [build failed]` the section is about.
 
 A mutation that survives is the finding. Before writing the test that catches it,
 check the assertion will reach the mutated code at all: a test that rebuilds the
 production expression in its own body holds whatever production does, so it stays
 green through every mutation of the real thing. Extract the expression into a
-named function and call it from both sides.
+named function and have production call it.
+
+Then have the test call it for the **actual** value only. The expected value must
+come from somewhere the mutation cannot move: a literal, or an invariant of the
+result. Calling the extracted function on both sides reproduces the original
+defect one level up — a mutation shifts both sides together and the test stays
+green. "The id splits into two parts on the underscore, the first is this literal
+GUID, the second parses as a GUID, and two calls differ" are invariants; "equals
+`membershipID(group)`" is not an assertion at all.
 
 ## Best Practices
 
