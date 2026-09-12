@@ -33,6 +33,63 @@ go fix -fix=any ./...
 | `reflecttypefor` | `reflect.TypeOf((*T)(nil)).Elem()` → `reflect.TypeFor[T]()` | Cleaner generic form |
 | `stringsbuilder` | `output += s` → `strings.Builder` | Better performance for string concatenation |
 
+### Proving a construct needs the new language version
+
+`go fix` only applies modernizers your `go.mod` allows, so after a directive
+raise some rewrites are not style choices — they are constructs the previous
+language version rejected. Do not assert that from the release notes. Build the
+same file under both directives and let the compiler say so:
+
+```bash
+mkdir -p /tmp/langprobe && cd /tmp/langprobe
+cat > p.go <<'EOF'
+package p
+
+type Inner struct{ A string }
+type Outer struct {
+	Inner
+	B string
+}
+
+var _ = Outer{A: "x", B: "y"}
+EOF
+for v in 1.26.0 1.27.0; do
+  { echo "module langprobe"; echo; echo "go $v"; } > go.mod
+  out=$(go build ./... 2>&1); rc=$?
+  if [ $rc -eq 0 ]; then printf 'go %s: compiles\n' "$v"
+  else printf 'go %s: %s\n' "$v" "$out"; fi
+done
+```
+
+Capture the status; do not pipe it. `go build ./... | tail -1` reports `tail`'s
+exit status, so a failed build looks like a success and the branch printing the
+success marker never runs — which is how a plausible transcript ends up in a
+document without ever having been produced by the script above it.
+
+```
+go 1.26.0: # langprobe
+./p.go:9:15: use of promoted field Inner.A in struct literal of type Outer requires go1.27 or later (-lang was set to go1.26; check go.mod)
+go 1.27.0: compiles
+```
+
+The diagnostic names the version, which turns "this is a 1.27 feature" from a
+claim into evidence — worth putting in the pull request, because a review bot
+whose model predates the toolchain will report exactly these lines as a compile
+error and propose undoing them.
+
+**Go 1.27: promoted fields in composite literals.** `Outer{A: "x"}` for a field
+promoted from an embedded struct is the rewrite most visible after raising the
+directive to 1.27. The modernizer is `embedlit`; on the same tree with `go
+1.26.0` in `go.mod` it produces no diff at all, which is the gating in action.
+An embedded field whose promoted
+name equals its own type name cannot be flattened — `Unicode: Unicode{Unicode:
+"yes"}` stays wrapped, because `Unicode:` in that literal is the embedded field,
+not the promoted string. A mixed result is correct, not an inconsistency.
+
+Confirm a flattened literal still builds the same value before trusting it: a
+`reflect.DeepEqual` comparison against the wrapped form costs one throwaway test
+and rules out the promoted name resolving to a different field.
+
 ### go fix Best Practices
 
 1. **Run after upgrading Go** — `go fix` detects your `go.mod` version and only applies applicable modernizers
