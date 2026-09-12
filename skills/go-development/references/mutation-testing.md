@@ -214,6 +214,42 @@ func TestIsValid(t *testing.T) {
 }
 ```
 
+## Hand-rolled mutations: a build failure is not a caught defect
+
+Gremlins is the tool, but a targeted question — "does anything actually pin this
+one line?" — is usually answered faster by injecting the defect yourself. That
+loop has a failure mode the tool does not have, and it reports the wrong answer
+in the reassuring direction.
+
+Removing a call often orphans its import. `go test ./...` then exits non-zero on
+`"slices" imported and not used`, the loop sees a non-zero exit, and prints
+CAUGHT for a mutation no assertion ever saw. The run measured the compiler.
+
+Two rules follow:
+
+- **Every mutation must build clean before its result counts.** Check for a
+  compiler diagnostic (`# package` lines, `[build failed]`), not just the exit
+  code. Where a mutation would orphan a symbol, keep it referenced —
+  `_ = slices.Clone(x)`, `_ = uuid.New()` — so the defect is the only change.
+- **Restore from a copy, never `git checkout -- <file>`.** That restores the last
+  *committed* state, discarding the guard you just wrote and have not committed.
+  `cp file /tmp/x.bak` first, `cp` back after each mutation, and run the full
+  suite at the end to prove the tree is the one you think it is.
+
+```bash
+cp pkg/thing.go /tmp/thing.bak
+# ... inject, then:
+go build ./... >/dev/null 2>&1 || { echo "BUILD BROKEN — not evidence"; }
+go test ./... ; echo "exit=$?"
+cp /tmp/thing.bak pkg/thing.go
+```
+
+A mutation that survives is the finding. Before writing the test that catches it,
+check the assertion will reach the mutated code at all: a test that rebuilds the
+production expression in its own body holds whatever production does, so it stays
+green through every mutation of the real thing. Extract the expression into a
+named function and call it from both sides.
+
 ## Best Practices
 
 1. **Start with 60% threshold** - Increase as tests mature
