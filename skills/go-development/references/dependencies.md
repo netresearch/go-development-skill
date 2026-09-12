@@ -94,6 +94,76 @@ paths:
   - '.go-version'
 ```
 
+## Replacing an archived dependency: prove the swap, do not assume it
+
+An archived module is a reason to move, but the replacement is a behaviour change
+until measured. Two things to establish before the commit message claims a
+drop-in.
+
+**Enumerate every symbol and every struct tag you use**, not just the one call
+you remember. A fork can keep a signature and change how it reads a tag. The
+cheap evidence is a differential probe: a throwaway module importing both
+libraries, feeding the same inputs through each, comparing results *and*
+whether an error was returned. Copy the real structs with their real tags —
+reconstructed fixtures test the reconstruction. Control-test the probe by
+injecting one difference and checking it reports it; a probe that cannot fail
+is not evidence.
+
+**Read the advisory rather than a summary.** The advisory in this area may be
+against the module you are migrating *to*: `go-viper/mapstructure/v2` carries
+CVE-2025-11065 for `<= 2.3.0`, while the archived `mitchellh/mapstructure` has
+no advisory at all. Take the package, the range and the first patched version
+from `gh api /advisories?cve_id=<CVE>` or the OSV record.
+
+Error *text* is part of the contract when it reaches a user. The same
+mapstructure change stops quoting the offending value back in a decode error, so
+any message a provider or CLI surfaces changes wording without changing
+behaviour. Grep for tests asserting on it, and put it in the release notes.
+
+## Moving to a standard-library replacement: check the acceptance set
+
+Go 1.27 ships `uuid`, which makes `github.com/hashicorp/go-uuid` and friends
+removable. The generation side is a clean swap; the parsing side is not.
+
+`hashicorp/go-uuid`'s `ParseUUID` accepts exactly the canonical 36-character
+hyphenated form. `uuid.Parse` also accepts the URN form
+(`urn:uuid:...`), the unhyphenated 32-character form, and the brace-wrapped
+form. Swapping it into a validator therefore *widens* what that validator
+accepts, silently — and for a value that is echoed back canonicalised by the
+system it addresses, a widened validator trades an error at validation time for
+a diff that never settles.
+
+Keep the old acceptance set explicitly:
+
+```go
+func parseGUID(s string) error {
+	if len(s) != 36 {
+		return fmt.Errorf("uuid string is wrong length")
+	}
+	_, err := uuid.Parse(s)
+	return err
+}
+```
+
+The length check is what makes it strict; the three wider spellings are 45, 32
+and 38 bytes. Pin it with a table test that lists those three as rejected, and
+confirm the test fails when the length check is removed — otherwise the guard is
+asserting nothing.
+
+Two more things the swap changes:
+
+- **Rejection wording.** `go-uuid` returned `uuid is improperly formatted`; the
+  standard library returns `invalid uuid`. Anywhere that interpolates the parse
+  error into a user-facing message now reads differently.
+- **The generated value's shape.** `go-uuid`'s `GenerateUUID` formatted sixteen
+  random bytes *without* setting the version and variant bits, so it never
+  produced a valid v4. `uuid.New()` does. If the value is stored, say so.
+
+`uuid.UUID` is a `[16]byte`, so a `%s` verb renders raw bytes unless `String` is
+reached. That form compiles and `go vet` accepts it, so assert the rendering
+somewhere — and assert it by calling the production code, not by rebuilding the
+expression in the test.
+
 ## The `go` directive is not only a floor — it selects runtime behaviour
 
 `go.mod` carries two version lines and they do different jobs:
