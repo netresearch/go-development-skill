@@ -123,6 +123,54 @@ Incremental migration:
 
 Do not batch steps 2-4 across all repos on day one. One pilot, then fan out.
 
+## Codecov: Go names files by import path, so `ignore` silently never fires
+
+A Go coverage profile identifies files by import path, so every entry reaches
+Codecov as `github.com/<org>/<repo>/users.go` rather than `users.go`. Nothing
+strips that prefix by default, and two things break quietly:
+
+- **`ignore:` stops matching.** Codecov compiles `examples/**` to
+  `(?s:examples/.*)\Z`, anchored at the start, which a prefixed path cannot
+  satisfy. Excluded directories stay in the project total at 0% and drag it
+  down.
+- **Codecov cannot map a report entry to a file in the repository**, so files
+  can read 0% against a suite that covers them, and uploads merge
+  unpredictably.
+
+Add a `fixes:` entry with the module path:
+
+```yaml
+fixes:
+  - "github.com/<org>/<repo>/::"     # strip the import-path prefix
+```
+
+The tell is a project percentage that does not move: totals identical across
+commits that changed the tree (`lines` and `hits` byte-for-byte equal) mean the
+report is not being recomputed, not that coverage happens to be stable. On one
+repository this stood at 19.36% for thirty-two commits; after the `fixes:` entry
+the same tree measured 88.77%, with the ignored directories gone from the report
+and a previously absent flag appearing in it.
+
+Validate before merging — the endpoint both checks the file and prints how each
+pattern compiled, which is how you confirm an `ignore` entry can match at all:
+
+```bash
+curl -X POST --data-binary @codecov.yml https://codecov.io/validate
+```
+
+Two neighbouring traps once the paths are correct:
+
+- **Per-flag `paths:` filters** such as `"**/*.go"` cannot match a prefixed entry
+  either, so a flag's report can be filtered to nothing before the merge. In a
+  single-language repository they restrict nothing `ignore` does not already
+  cover; drop them rather than maintain a second place for a path mismatch to
+  discard data.
+- **Repairing the paths can arm a gate that was inert.** A `patch` status with
+  `target: 100%` posts nothing while the report is broken; the moment paths
+  resolve it starts failing pull requests against a threshold nobody chose. Set
+  it `informational: true` in the same change and calibrate the target from the
+  first corrected run.
+
 ## Common Anti-Patterns
 
 | Anti-pattern | Consequence | Fix |

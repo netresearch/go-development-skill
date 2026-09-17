@@ -240,6 +240,49 @@ before keeping it low:
 A repository that inherited its floor from a sibling library without
 inheriting the reason is the common case worth checking.
 
+### Building it — a floor nothing compiles is a promise, not a guarantee
+
+`actions/setup-go` with `go-version-file: go.mod` resolves the **`toolchain`**
+line, not the `go` directive. A module declaring `go 1.26.0` alongside
+`toolchain go1.27.1` is therefore built by 1.27.1 in every job, and the 1.26
+floor it advertises to importers is never compiled by anything.
+
+Read it off a run rather than assuming either way — the jobs say which they got:
+
+```bash
+gh run view <id> --log | grep -m1 "Setup go version spec"
+# Setup go version spec 1.27.1   ← while go.mod says go 1.26.0
+```
+
+The fix is a matrix that pins the toolchain per leg. **`GOTOOLCHAIN: local` on
+every step is the load-bearing part, not boilerplate:** without it the older
+runner reads the same `toolchain` line and upgrades itself, so the matrix
+reports a pass for a version it never measured.
+
+```yaml
+  go-compat:
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.26.8', '1.27.1']   # oldest entry matches the `go` directive
+    steps:
+      - uses: actions/setup-go@<sha>
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: false
+      - env: { GOTOOLCHAIN: local }
+        run: go version          # prints what you actually got — keep this step
+      - env: { GOTOOLCHAIN: local }
+        run: go build ./... && go vet ./... && go test -short -race ./...
+```
+
+Keep the `go version` step: it is the control that distinguishes a real 1.26 leg
+from a 1.27 leg wearing a 1.26 label, and it costs one line.
+
+Locally the same pin applies — `GOTOOLCHAIN=local ~/sdk/go1.26.8/bin/go test ./...`.
+Without it the SDK binary silently hands off to the newer toolchain, which is
+the same false green one directory down.
+
 ### Raising it
 
 `go.mod` is not the only surface. Sweep **without an extension filter** — the
