@@ -242,12 +242,17 @@ inheriting the reason is the common case worth checking.
 
 ### Building it — a floor nothing compiles is a promise, not a guarantee
 
-`actions/setup-go` with `go-version-file: go.mod` resolves the **`toolchain`**
-line, not the `go` directive. A module declaring `go 1.26.0` alongside
-`toolchain go1.27.1` is therefore built by 1.27.1 in every job, and the 1.26
-floor it advertises to importers is never compiled by anything.
+Which of the two lines `actions/setup-go` resolves from `go-version-file`
+depends on the major you pin, so do not carry an answer between repositories.
+Measured on **v7.0.0**: a module declaring `go 1.26.0` alongside
+`toolchain go1.27.1` was built by 1.27.1 in every job, and the 1.26 floor it
+advertises to importers was compiled by nothing. Older majors document reading
+the `go` directive — the `@v5` examples elsewhere in this skill
+(`makefile.md`, `mutation-testing.md`) predate the change and are not covered by
+what follows.
 
-Read it off a run rather than assuming either way — the jobs say which they got:
+Because the answer is version-dependent, read it off a run rather than reasoning
+about it — the jobs say which they got:
 
 ```bash
 gh run view <id> --log | grep -m1 "Setup go version spec"
@@ -264,7 +269,7 @@ reports a pass for a version it never measured.
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.26.8', '1.27.1']   # oldest entry matches the `go` directive
+        go: ['1.26.8', '1.27.1']   # oldest entry = latest patch of the floor's line
     steps:
       - uses: actions/setup-go@<sha>
         with:
@@ -278,6 +283,13 @@ reports a pass for a version it never measured.
 
 Keep the `go version` step: it is the control that distinguishes a real 1.26 leg
 from a 1.27 leg wearing a 1.26 label, and it costs one line.
+
+Note what that matrix does and does not prove. `go 1.26.0` names an exact
+minimum, and 1.26.8 satisfies it without exercising it — the leg tests the
+**supported line**, not the floor. Pin the floor itself (`'1.26.0'`) when the
+question is whether the declared minimum still compiles; use the latest patch
+when the question is whether the line still works. They are different claims and
+only one of them is usually what you want.
 
 Locally the same pin applies — `GOTOOLCHAIN=local ~/sdk/go1.26.8/bin/go test ./...`.
 Without it the SDK binary silently hands off to the newer toolchain, which is
