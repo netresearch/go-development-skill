@@ -41,9 +41,26 @@ That is harmless until a helper has a tagged/untagged pair — the usual shape f
 container setup:
 
 ```go
-// test_setup.go          —— //go:build integration ; starts a real container
-// test_setup_stub.go     —— //go:build !integration ; calls t.Skip
-func SetupTestContainer(t *testing.T) *TestContainer
+// File: test_setup.go — the tagged build gets a real container
+//go:build integration
+
+package core
+
+func SetupTestContainer(t *testing.T) *TestContainer {
+	return startContainer(t)
+}
+```
+
+```go
+// File: test_setup_stub.go — the untagged build gets a skip
+//go:build !integration
+
+package core
+
+func SetupTestContainer(t *testing.T) *TestContainer {
+	t.Skip("requires the integration build tag")
+	return nil
+}
 ```
 
 A test in an **untagged** file that calls that helper skips in the unit tier and
@@ -91,7 +108,7 @@ A test that asserts a dial fails needs an address that fails *fast* and
 
 | address | behaviour | use |
 |---|---|---|
-| `example.com`, `test.com`, `server.com` | resolve to live hosts that drop packets on most ports | never — one 60s dial timeout per test |
+| `example.com`, `test.com`, `server.com` | resolve to live hosts that drop packets on most ports | never — each attempt runs to the client's connect timeout (60s measured with go-ldap's default) |
 | `something.invalid` | NXDOMAIN (RFC 6761), but still asks a resolver | fine for a handful of calls |
 | `127.0.0.1:1` | refused immediately, no name resolution at all | anything that dials repeatedly |
 

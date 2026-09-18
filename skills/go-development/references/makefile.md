@@ -153,13 +153,17 @@ smoke test, so it lifts the average.
 
 The consequence is a gate that passes while the thing it guards sits under it.
 Measured on one library: `./...` 80.3%, library alone 77.8%, threshold 79 — the
-gate was green for months and the library had never once met it.
+gate reported green on a figure 2.5 points above the code it exists to guard,
+which had never met it.
 
-Name the population the threshold describes, and profile that:
+Name the population the threshold describes, and profile that — the change
+belongs in `test`, where the profile is written:
 
 ```makefile
 COVERAGE_PACKAGES := .          # or ./internal/... — the code the gate is about
-test-coverage:
+
+.PHONY: test
+test:
 	@go test -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic $(COVERAGE_PACKAGES)
 ```
 
