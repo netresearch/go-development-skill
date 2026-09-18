@@ -342,5 +342,59 @@
         "pattern": "(alphabetical|non-promotional|ends with a period|single item|one (package|item)|exact project name)"
       }
     ]
+  },
+  {
+    "name": "integration_tier_visibility",
+    "prompt": "My Go unit tests all pass locally but the integration job in CI fails on a test I just edited. The test file has no build tag. What is going on and how do I verify a change before pushing?",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(untagged|no build tag|without a? ?build tag).{0,200}(both|every|all)"
+      },
+      {
+        "type": "content",
+        "pattern": "(t\\.Skip|stub)"
+      },
+      {
+        "type": "content",
+        "pattern": "-tags=?[\"']?integration"
+      }
+    ]
+  },
+  {
+    "name": "tag_and_run_filter_selection",
+    "prompt": "Our Makefile runs `go test -tags=integration -run=\"Test.*Integration\" ./...` for the integration target. Is that correct, and how would I check what it actually runs without starting containers?",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "-test\\.list"
+      },
+      {
+        "type": "content",
+        "pattern": "go test -c"
+      },
+      {
+        "type": "content",
+        "pattern": "(subtract|drops?|never run|silently|only the tag)"
+      }
+    ]
+  },
+  {
+    "name": "coverage_threshold_population",
+    "prompt": "Our Makefile enforces a coverage threshold from `go tool cover -func` over ./... and it has been green for months. Is that a meaningful gate for the library?",
+    "assertions": [
+      {
+        "type": "content",
+        "pattern": "(population|examples/|testutil|mixes|which packages)"
+      },
+      {
+        "type": "content",
+        "pattern": "(COVERAGE_PACKAGES|profile (only )?the|narrow)"
+      },
+      {
+        "type": "content",
+        "pattern": "(codecov|ignore)"
+      }
+    ]
   }
 ]

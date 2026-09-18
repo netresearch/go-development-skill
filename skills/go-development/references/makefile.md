@@ -143,6 +143,36 @@ test-coverage: test
 	fi
 ```
 
+### The threshold is enforced over whatever `./...` matched
+
+`test` profiles `./...`, so the `total:` line mixes the library with every other
+package in the module — `examples/`, `testutil/`, generated helpers. The
+threshold is then a number about that mixture, and the mixture usually scores
+*higher* than the library: demo code is short, straight-line and exercised by a
+smoke test, so it lifts the average.
+
+The consequence is a gate that passes while the thing it guards sits under it.
+Measured on one library: `./...` 80.3%, library alone 77.8%, threshold 79 — the
+gate was green for months and the library had never once met it.
+
+Name the population the threshold describes, and profile that:
+
+```makefile
+COVERAGE_PACKAGES := .          # or ./internal/... — the code the gate is about
+test-coverage:
+	@go test -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic $(COVERAGE_PACKAGES)
+```
+
+Check it against the tool that reports coverage elsewhere: if `codecov.yml`
+carries `ignore:` entries, the gate should be measuring the same set, or the two
+numbers will disagree and each will look authoritative. Codecov has a separate
+failure mode where those `ignore:` entries silently never match — see
+`references/reusable-workflows.md` § Codecov.
+
+Recalibrating after narrowing the population is not weakening the gate: the old
+number described a set nobody was guarding. Say so in the commit, with both
+figures.
+
 ## Docker Integration
 
 ```makefile

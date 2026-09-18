@@ -31,6 +31,80 @@ go test -tags=integration ./...        # + integration
 go test -tags="integration e2e" ./...  # full suite
 ```
 
+### An untagged file is in *every* build, not just the unit one
+
+"unit = untagged" describes which tier a file belongs to, not which builds
+compile it. A file with no constraint is compiled into the untagged build **and**
+every tagged one, so a test in it runs in both.
+
+That is harmless until a helper has a tagged/untagged pair — the usual shape for
+container setup:
+
+```go
+// test_setup.go          —— //go:build integration ; starts a real container
+// test_setup_stub.go     —— //go:build !integration ; calls t.Skip
+func SetupTestContainer(t *testing.T) *TestContainer
+```
+
+A test in an **untagged** file that calls that helper skips in the unit tier and
+executes for real in the tagged one. A defect in such a test is therefore
+invisible to `go test ./...` — it can only fail where CI runs the tagged build.
+Symptom: every local run green, the integration job red, and the diff looks
+unrelated to the failure.
+
+So: before reporting a change as verified, run the tier CI runs, not only the
+default one. When a test that constructs something is edited, check which file
+it lives in and which helper it calls.
+
+### A `-run` filter can only subtract from what the tag selected
+
+Pairing a build tag with a name pattern is a common way to write an
+"integration only" target:
+
+```make
+test-integration:
+	go test -tags=integration -run="Test.*Integration" ./...   # drops tests
+```
+
+The tag already chose the files. The pattern then removes every test in them
+whose *name* does not match, which is silent and easy to get wrong: names like
+`TestBulkOperations` or `TestCacheInvalidation` live in tagged files and contain
+no "Integration". Select by tag and let the tagged build carry the untagged
+tests too; that overlap is the cost of selecting by tag.
+
+Count what a selector would run without starting anything — `-test.list` takes
+the same patterns as `-run`:
+
+```bash
+go test -c -tags=integration -o /tmp/x.test .
+/tmp/x.test -test.list '.*'                  # everything in the tagged build
+/tmp/x.test -test.list 'Test.*Integration'   # what the -run filter would keep
+```
+
+Compare the two counts against the number of `func Test` in the tagged files. A
+gap is tests compiled and never run.
+
+### Addresses for tests that must fail to connect
+
+A test that asserts a dial fails needs an address that fails *fast* and
+*always*:
+
+| address | behaviour | use |
+|---|---|---|
+| `example.com`, `test.com`, `server.com` | resolve to live hosts that drop packets on most ports | never — one 60s dial timeout per test |
+| `something.invalid` | NXDOMAIN (RFC 6761), but still asks a resolver | fine for a handful of calls |
+| `127.0.0.1:1` | refused immediately, no name resolution at all | anything that dials repeatedly |
+
+Two traps beyond the timeout:
+
+- **Never a port something might serve.** `localhost:389` makes "the dial must
+  fail" pass for the wrong reason on a developer running that service, and fail
+  outright once it succeeds.
+- **Some hostnames are data, not addresses.** A string fed to an error formatter
+  or a masking function may have an expected output computed from its length.
+  Rewriting the address there breaks the expectation; check what the test does
+  with the string before sweeping it.
+
 ## Time Control
 
 Testing time-dependent code (schedulers, caches, rate limiters) with real
