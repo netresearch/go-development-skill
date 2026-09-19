@@ -12,10 +12,6 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 
 # Go Development Patterns
 
-## Required Workflow
-
-**For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection).
-
 ## Core Principles
 
 ### Type Safety
