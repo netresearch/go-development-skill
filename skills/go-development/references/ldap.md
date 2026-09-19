@@ -282,11 +282,19 @@ func (c *Client) ListUsers(filter string, limit int) ([]*User, error) {
 
 ### Validate Credentials
 
+The early return on "user not found" below is a **user-enumeration timing side
+channel**: the not-found path skips the bind entirely, so it answers in a
+fraction of the time the wrong-password path takes, and an attacker reads
+account existence off the clock. Both branches must do the same work — see
+[Constant-time authentication branches](#constant-time-authentication-branches)
+directly below for the shape that closes it.
+
 ```go
 func (c *Client) Authenticate(username, password string) (*User, error) {
     // First, find the user
     user, err := c.FindUserBySAM(username)
     if err != nil {
+        // DO NOT return here — see the next section. The dummy bind belongs here.
         return nil, fmt.Errorf("user not found: %w", err)
     }
 
@@ -330,6 +338,76 @@ func (c *Client) AuthenticateWithNewConn(username, password string) (*User, erro
     return user, nil
 }
 ```
+
+### Constant-time authentication branches
+
+When the lookup fails, do what the found path does: bind against a non-existent
+identifier with the supplied password, restore the service bind, and record the
+attempt. The error the caller sees stays the lookup error; only the *work* is
+equalised.
+
+```go
+// buildDummyBindDN is the part every hand-written version of this skips.
+// The identifier reaches a bind DN, so it is ESCAPED — interpolating a raw
+// identifier into a DN is its own problem, separate from the timing one.
+func buildDummyBindDN(identifier, baseDN string) string {
+    return fmt.Sprintf("CN=nonexistent-%s,CN=Users,%s", ldap.EscapeDN(identifier), baseDN)
+}
+
+var bindErr error
+if lookupErr == nil {
+    bindErr = conn.Bind(user.DN(), password)
+} else {
+    // same bind, same password, against a DN that cannot exist
+    _ = conn.Bind(buildDummyBindDN(identifier, baseDN), password)
+    bindErr = lookupErr // the caller still learns "not found", not "wrong password"
+}
+
+// the verification bind re-authenticated this connection as the end user (or as
+// the dummy identity); a pooled connection must be rebound as the service
+// account before it goes back, in BOTH branches
+rebindPooledConnToService(conn, "CheckPassword")
+
+if bindErr != nil {
+    rateLimiter.RecordFailure(key) // both branches, or the counter leaks existence too
+    return nil, bindErr
+}
+```
+
+Three parts, and the escaping is the one that gets dropped: measured across ten
+independent agent fixes of exactly this defect in `netresearch/simple-ldap-go`,
+ten of ten closed the timing gap and **none** escaped the dummy DN
+([go-development-skill#70](https://github.com/netresearch/go-development-skill/issues/70)).
+The library's own `CheckPasswordForSAMAccountName` has carried the correct
+version the whole time, one function away in the same file.
+
+The rate limiter counts too. Recording a failure only on the found path turns
+the counter into the oracle the timing fix just closed.
+
+### Testing a timing fix
+
+Assert an **observable the fix changes**, never elapsed time. A wall-clock
+assertion is noise on a loaded machine and on CI: it fails when a neighbouring
+container gets busy and passes on a tree where the bind was removed again.
+
+What to assert instead, in rough order of preference:
+
+- the dummy bind happened: a recorded failed attempt in the rate limiter for the
+  unknown identifier, with the same key shape the found path uses
+- the bind reached the server: a captured bind DN that is the escaped dummy DN,
+  which pins the escaping at the same time
+- a metric or log counter the authentication path increments in both branches
+
+```go
+// the observable, not the clock
+_, err := client.CheckPassword("no-such-user", "whatever")
+require.Error(t, err)
+require.Equal(t, 1, limiter.Failures(normalizeKey("no-such-user")),
+    "the not-found path must record an attempt, or the rate limiter is the oracle")
+```
+
+A timing fix with no test is a fix until the next refactor — the same ten trials
+left **0 of 10** regression tests behind.
 
 ## Password Operations
 
