@@ -366,7 +366,7 @@ if lookupErr == nil {
 // the verification bind re-authenticated this connection as the end user (or as
 // the dummy identity); a pooled connection must be rebound as the service
 // account before it goes back, in BOTH branches
-rebindPooledConnToService(conn, "CheckPassword")
+l.rebindPooledConnToService(conn, "CheckPasswordForSAMAccountName")
 
 if bindErr != nil {
     rateLimiter.RecordFailure(key) // both branches, or the counter leaks existence too
@@ -400,7 +400,7 @@ What to assert instead, in rough order of preference:
 
 ```go
 // the observable, not the clock
-_, err := client.CheckPassword("no-such-user", "whatever")
+_, err := client.CheckPasswordForSAMAccountName("no-such-user", "whatever")
 require.Error(t, err)
 require.Equal(t, 1, limiter.Failures(normalizeKey("no-such-user")),
     "the not-found path must record an attempt, or the rate limiter is the oracle")
