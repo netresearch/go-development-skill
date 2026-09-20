@@ -98,6 +98,8 @@ jobs:
       digest: ${{ needs.release.outputs.image_digest }}
 ```
 
+> **Cannot run under a SHA-pinning ruleset.** `generator_container_slsa3.yml` calls two nested actions by tag — `detect-workflow-js` and `generate-builder` — in `@v2.0.0` as used above and in `@v2.1.0`, the latest release. A repository or organisation with `sha_pinning_required` on rejects the run at the first of them. Pinning the `uses:` line above to a SHA does not help: the rejected references are inside the generator, and it refuses to run from a SHA anyway. Upstream [slsa-github-generator#4440](https://github.com/slsa-framework/slsa-github-generator/issues/4440) is open. The fallback there is `actions/attest-build-provenance`, which is a step action rather than a reusable workflow, so it replaces the job rather than its `uses:` line — for an image, `subject-name` plus the `subject-digest` the build emitted, in a job holding `id-token: write` and `attestations: write`. It attests to what GitHub can witness, which is not the isolated builder Level 3 denotes: state the level you reach.
+
 Without exposed outputs, release gates degrade to "find the SHA by re-querying the registry" — racy, slow, and often wrong.
 
 ## Pinning Reusable Workflows
