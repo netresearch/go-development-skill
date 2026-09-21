@@ -59,7 +59,7 @@ Load as needed:
 | `references/contracts-and-invariants.md` | Contracts, invariants, property tests |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
-| `references/modernization.md` | Go 1.26 modernizers, `go fix`, `errors.AsType[T]` |
+| `references/modernization.md` | `go fix` modernizers and their build-tag trap, `errors.AsType[T]`, `b.Loop` |
 | `references/dependencies.md` | Upgrades: `go get -u all`, majors, build-set scoping |
 | `references/lefthook-template.md` | Ready-to-use lefthook.yml for Go project git hooks |
 | `references/branch-protection.md` | Ruleset watermark: three-ruleset gate, bypass modes |
