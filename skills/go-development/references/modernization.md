@@ -119,12 +119,16 @@ and rules out the promoted name resolving to a different field. Give that test a
 control case comparing deliberately different values — a comparison that cannot
 fail proves nothing.
 
-**`embedlit` reaches further than composite literals suggest.** It also changes
-what reflection sees, because a field whose type it rewrites is walked
-differently. Where a struct's identity is derived by reflection — a config hash,
-a cache key, a change detector — compare that derived value before and after on
-the same input rather than reasoning about it. On ofelia, `atomictypes` turned a
-job's `running int32` into `atomic.Int32`, and the job hash walked that struct
+**`atomictypes` reaches further than the call sites it rewrites.** It changes a
+field's *type*, and a struct walked by reflection is walked differently
+afterwards — `int32` is a leaf, `atomic.Int32` is a struct with fields of its
+own. `embedlit` does not have this property: it rewrites composite literals and
+never a struct definition, so it leaves reflection untouched.
+
+Where a struct's identity is derived by reflection — a config hash, a cache key,
+a change detector — compare that derived value before and after on the same
+input rather than reasoning about it. On ofelia, `atomictypes` turned a job's
+`running int32` into `atomic.Int32`, and the job hash walked that struct
 field-by-field, recursing into any field of kind Struct *before* checking its
 tag; the hash happened to stay byte-identical, but nothing in the diff said so.
 
@@ -251,9 +255,10 @@ package-load error, so chaining them with `&&` lets one failing run silently ski
 the other and leaves the union incomplete — which is the very gap this section
 exists to close. Read both exit statuses.
 
-Measured 2026-09-21 across seven repositories: the analyzer offered one rewrite
-and the grep found seven further call sites it had not touched, all of them in
-`if !errors.As(...)` guards and `return errors.As(...)` bodies. Treat a clean
+Measured 2026-09-21 across seven repositories: the analyzer offered one rewrite,
+in a positive `if errors.As(err, &target)` check, and a grep then found seven
+further call sites it had not touched — every one of them in an
+`if !errors.As(...)` guard or a `return errors.As(...)` body. Treat a clean
 `go fix` as a partial pass and finish the remainder by hand.
 
 ## sync.WaitGroup.Go (Go 1.25)
