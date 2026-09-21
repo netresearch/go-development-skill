@@ -241,9 +241,15 @@ so it is no longer purely manual — but it does not catch every shape. Run the
 tool first, then grep for what it left:
 
 ```bash
-go fix ./... && go fix -tags=integration,e2e ./...
+go fix ./...; echo "untagged: $?"
+go fix -tags=integration,e2e ./...; echo "tagged: $?"
 grep -rn 'errors\.As(' --include='*.go' .
 ```
+
+The two runs are separate statements on purpose. `go fix` exits non-zero on a
+package-load error, so chaining them with `&&` lets one failing run silently skip
+the other and leaves the union incomplete — which is the very gap this section
+exists to close. Read both exit statuses.
 
 Measured 2026-09-21 across seven repositories: the analyzer offered one rewrite
 and the grep found seven further call sites it had not touched, all of them in
@@ -312,11 +318,26 @@ for b.Loop() {
 is a defect — the first two were found by running the benchmarks, not by reading
 the code:
 
-1. **Manual timer control.** A benchmark bracketing per-iteration setup with
-   `b.StopTimer()` / `b.StartTimer()` aborts at runtime with
-   `benchmark.go:417: B.Loop called with timer stopped`. b.Loop owns the timer.
-2. **More than one `b.N` loop in one benchmark scope.** There only one loop is
-   the measurement; another sizes its setup by `b.N` (pre-populate exactly `b.N`
+1. **The timer is stopped when `b.Loop()` is called.** b.Loop requires a running
+   timer at each call and aborts otherwise with
+   `benchmark.go:417: B.Loop called with timer stopped`. Manual timer control is
+   *not* itself forbidden: `b.StopTimer()` / `b.StartTimer()` **balanced inside**
+   the body, so that the timer runs again before the next `b.Loop()`, is fine and
+   measures 185 ns/op. What fails is the older shape that stops the timer before
+   the loop and again as the body's last statement:
+
+   ```go
+   b.StopTimer()                 // ← aborts: timer stopped at the first b.Loop()
+   for b.Loop() {
+       setup()
+       b.StartTimer()
+       work()
+       b.StopTimer()             // ← and stopped again at every later one
+   }
+   ```
+
+2. **More than one `b.N` loop in one benchmark scope.** There is only one loop
+   that measures; another sizes its setup by `b.N` (pre-populate exactly `b.N`
    cache entries, then delete one per iteration). b.Loop cannot express that: its
    iteration count is decided as it runs, and `b.N` is only meaningful *after* it
    returns false.
@@ -330,13 +351,16 @@ go test -run='^$' -bench=. -benchtime=1x ./...
 go test -run='^$' -bench=. -benchtime=1x -tags=integration,e2e ./...
 ```
 
-**Do not reach for `for i := 0; b.Loop(); i++`** to avoid the extra counter. It
-compiles, `go vet` accepts it and `-benchtime=Nx` yields exactly N iterations,
-but `testing.B.Loop`'s documentation ties the keep-alive transformation to the
-loop condition being written *exactly* as `b.Loop()`, and a benchmark built to
-separate the two spellings could not distinguish them (all forms 3.1 ns/op
-against 0.18 ns/op for an empty loop — the measurement could see a deleted body
-and saw none). With no evidence either way, use the documented form.
+**`for i := 0; b.Loop(); i++` also keeps the body alive**, so it is a legitimate
+way to carry an index without a separate counter. The documentation's wording
+("the loop condition must be written exactly as `b.Loop()`") reads as if only
+`for b.Loop() { … }` qualified, and three benchmarks built to separate the two
+spellings could not tell them apart. The compiler settles it:
+`cmd/compile/internal/bloop.isTestingBLoop` accepts any `ir.OFOR` whose `Cond` is
+a call to `testing.(*B).Loop`, and inspects neither the loop's `Init` nor its
+`Post`. A three-clause loop is an `OFOR`, so it gets the same
+`runtime.KeepAlive` wrapping. Pick whichever of the two reads better; do not
+pick on a belief about keep-alive.
 
 ## new(expr) — Pointer to Value (Go 1.26)
 
