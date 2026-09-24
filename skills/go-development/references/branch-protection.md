@@ -96,6 +96,24 @@ has **no approval source**: nothing can merge, and ruleset bypass does not
 apply to a plain `gh pr merge` (only to the explicit admin-bypass path, which
 is banned). Ship the workflow before or with the ruleset.
 
+The auto-approve job runs only for **non-draft, same-repository** PRs
+(`draft == false && head.repo.full_name == github.repository` in the shared
+workflow). On a draft the job is `skipped` and the review decision stays
+`REVIEW_REQUIRED`; GitHub also refuses a self-approval (HTTP 422). Neither is a
+reason to ask for a human approver: mark the PR ready (`gh pr ready`) and read
+the gate again. That only starts a run when the caller's `pull_request` trigger
+lists `ready_for_review` — the default types do not:
+
+```yaml
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+```
+
+A **fork** PR has no automatic approval source; there the maintainer's own
+review is the approval.
+
 ## Two rollout traps
 
 - **A required check must always report.** Deriving required contexts from a
