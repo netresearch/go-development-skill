@@ -101,10 +101,10 @@ author passes the authorization test (`author_association` OWNER, MEMBER or
 COLLABORATOR by default; write permission with `auto-approve-require-write:
 true`). On a draft the job is `skipped` and the review decision stays
 `REVIEW_REQUIRED`, and the PR author cannot approve their own PR (the API
-answers HTTP 422). Neither is a reason to ask for a human approver: mark the PR
-ready (`gh pr ready`) and read the gate again. That only starts a run when the
-caller's `pull_request` trigger lists `ready_for_review` — the default types do
-not:
+answers HTTP 422). For an author who passes the test, neither is a reason to
+ask for a human approver: mark the PR ready (`gh pr ready`) and read the gate
+again. That only starts a run when the caller's `pull_request` trigger lists
+`ready_for_review` — the default types do not:
 
 ```yaml
 on:
@@ -113,8 +113,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 ```
 
-A **fork** PR has no automatic approval source; there the maintainer's own
-review is the approval.
+A **fork** PR, or one whose author fails the authorization test, has no
+automatic approval source; there a maintainer's review is the approval.
 
 ## Two rollout traps
 
