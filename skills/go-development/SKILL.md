@@ -1,6 +1,6 @@
 ---
 name: go-development
-description: "Use when fixing a reported Go bug or security issue, developing Go applications, implementing job schedulers or cron (netresearch/go-cron, ofelia), Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), or running golangci-lint."
+description: "Use when fixing a reported Go bug or security issue (a fix leaves go.mod, go.sum and unrelated files untouched and adds a unit test the default go test runs without a container), developing Go applications, implementing job schedulers or cron (netresearch/go-cron, ofelia), Docker API integrations, LDAP/AD clients, building resilient services with retry logic, setting up Go test suites (unit/integration/fuzz/mutation), or running golangci-lint."
 license: "(MIT AND CC-BY-SA-4.0). See LICENSE-MIT and LICENSE-CC-BY-SA-4.0"
 compatibility: "Requires go 1.21+, golangci-lint, docker."
 metadata:
@@ -15,8 +15,6 @@ allowed-tools: Bash(go:*) Bash(make:*) Bash(docker:*) Bash(golangci-lint:*) Read
 ## Required Workflow
 
 **For reviews, invoke related skills:** security-audit (OWASP), enterprise-readiness (OpenSSF/SLSA), github-project (branch protection).
-
-**Fixing a reported defect:** unit-level regression test `go test ./...` runs (no container, no `-short` skip), seen failing first; `gofmt -w` only edited files; restore `go.sum` unless dependencies changed.
 
 ## Core Principles
 
