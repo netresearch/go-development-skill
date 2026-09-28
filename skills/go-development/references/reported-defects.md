@@ -12,9 +12,7 @@ because it needs a container, guards nothing in the run most people make.
 
 Pin what the fix changes: the error returned (`errors.Is`), the calls made to
 the dependency, the branch taken. Do not measure wall-clock time. On a loaded
-machine a timing assertion is noise, and it proves nothing about the fix — this
-holds for timing side channels too, where the observable is that both paths
-make the same calls, not that they take the same time.
+machine a timing assertion is noise, and it proves nothing about the fix.
 
 ## Watch it fail
 
