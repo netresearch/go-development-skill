@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Standard Makefile Interface
 
 A consistent Makefile interface enables CI/CD automation and cross-project tooling. This defines the standard targets every Go project should implement.

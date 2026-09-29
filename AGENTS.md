@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Go Development Skill
 
 Production-grade Go development patterns for building resilient services, job schedulers, Docker integrations, and LDAP clients.

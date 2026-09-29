@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Lefthook Template for Go Projects
 
 Install: `go install github.com/evilmartians/lefthook@latest && lefthook install`

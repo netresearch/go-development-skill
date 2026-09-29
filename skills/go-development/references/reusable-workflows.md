@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Reusable Workflows for Go Repos
 
 Patterns for unifying CI/CD across multiple Go repositories by calling shared reusable workflows instead of duplicating action configuration per-repo.

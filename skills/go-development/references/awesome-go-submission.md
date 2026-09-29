@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Submitting a Go Project to awesome-go
 
 How to get a Go library accepted into [avelino/awesome-go](https://github.com/avelino/awesome-go) on the first try. The list is curated and gated by an automated CI suite plus maintainer review; most rejections are mechanical (PR-body format, alphabetical order) rather than quality. This doc captures the exact format the CI parses and the gotchas that aren't in the contributing guide.

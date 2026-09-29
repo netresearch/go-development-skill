@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Branch Protection Standard for Go Repositories
 
 The default-branch gate for Netresearch Go repos, measured as the estate

@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Single-Build Release Pipeline for Go Apps
 
 Cross-compile every target once, publish the binaries as GitHub Release assets, then re-use those same binaries to assemble the container image. One `go build` per platform serves both release-page downloads AND the image push — no second compile in a Dockerfile, no drift between the tarball and the image.

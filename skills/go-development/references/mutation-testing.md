@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Go Mutation Testing
 
 Mutation testing measures test quality by introducing small code changes (mutations) and verifying tests detect them. Higher scores indicate more effective tests.
