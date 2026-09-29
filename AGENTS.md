@@ -20,6 +20,7 @@ Production-grade Go development patterns for building resilient services, job sc
 │   └── hooks/                      # Git hook templates (pre-push)
 ├── scripts/
 │   └── verify-harness.sh           # Harness consistency checker
+├── tests/                          # Behavioural tests for the scripts
 ├── .github/workflows/              # CI workflows (lint, release, auto-merge)
 ├── docs/                           # Architecture and planning docs
 ├── composer.json                   # Composer package manifest
@@ -30,11 +31,13 @@ Production-grade Go development patterns for building resilient services, job sc
 
 No build system scripts defined in composer.json. Basic operations:
 
-- `bash skills/go-development/scripts/verify-go-project.sh` -- verify Go project setup
+- `bash tests/verify-go-project.sh` -- test the Go project verifier
+- `bash tests/check-plugin-version.sh` -- test the plugin version check and pre-push hook
+- `bash skills/go-development/scripts/verify-go-project.sh <dir>` -- verify a Go project's setup
 - `bash scripts/verify-harness.sh --status` -- check harness maturity level
-- `go test ./...` -- run unit tests
-- `go test -tags=integration ./...` -- run integration tests
-- `golangci-lint run` -- lint Go code
+- `pre-commit run --all-files` -- run the local lint hooks (the local counterpart of Skill Validation)
+
+This repository contains no Go code; `go test` and `golangci-lint` are commands the skill recommends for the Go projects it is used on.
 
 ## Rules
 

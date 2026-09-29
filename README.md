@@ -100,20 +100,36 @@ Example queries:
 
 ```
 go-development-skill/
-├── SKILL.md                              # Skill metadata and core patterns
-└── references/
-    ├── architecture.md                   # Package structure, state mutation completeness
-    ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
-    ├── resilience.md                     # Pointer to go-cron's resilience wrappers
-    ├── docker.md                         # Docker client patterns
-    ├── ldap.md                           # LDAP/Active Directory integration
-    ├── testing.md                        # Build tags, race and Fiber v2 gotchas
-    ├── linting.md                        # golangci-lint v2 configuration
-    ├── api-design.md                     # Enum/status defensive handling
-    ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
-    ├── mutation-testing.md               # Gremlins test quality measurement
-    ├── makefile.md                       # Standard Makefile interface
-    └── modernization.md                  # Go 1.26 modernizers, go fix, errors.AsType
+├── skills/go-development/
+│   ├── SKILL.md                              # Skill metadata and core patterns
+│   ├── checkpoints.yaml                      # Assessment checkpoints for Go projects
+│   ├── evals/evals.json                      # Skill evaluation cases
+│   ├── scripts/verify-go-project.sh          # Go project verification
+│   └── references/
+│       ├── api-design.md                     # Enum/status defensive handling
+│       ├── architecture.md                   # Package structure, state mutation completeness
+│       ├── awesome-go-submission.md          # Submitting a project to awesome-go
+│       ├── branch-protection.md              # Branch protection standard for Go repos
+│       ├── contracts-and-invariants.md       # Contracts and invariants
+│       ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
+│       ├── dependencies.md                   # Dependency upgrades
+│       ├── docker.md                         # Docker client patterns
+│       ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
+│       ├── ldap.md                           # LDAP/Active Directory integration
+│       ├── lefthook-template.md              # Lefthook git hooks for Go projects
+│       ├── linting.md                        # golangci-lint v2 configuration
+│       ├── logging.md                        # Structured logging with log/slog
+│       ├── makefile.md                       # Standard Makefile interface
+│       ├── modernization.md                  # Go 1.26 modernizers, go fix, errors.AsType
+│       ├── mutation-testing.md               # Gremlins test quality measurement
+│       ├── resilience.md                     # Pointer to go-cron's resilience wrappers
+│       ├── reusable-workflows.md             # Reusable GitHub workflows for Go repos
+│       ├── single-build-release.md           # Single-build release pipeline
+│       └── testing.md                        # Build tags, race and Fiber v2 gotchas
+├── Build/                                    # Plugin version check and pre-push hook
+├── scripts/verify-harness.sh                 # Agent harness consistency checker
+├── tests/                                    # Behavioural tests for the scripts
+└── docs/ARCHITECTURE.md                      # Architecture of this repository
 ```
 
 ## Expertise Areas
@@ -151,7 +167,9 @@ go-development-skill/
 - Resource isolation (one instance per test)
 - Fiber v2 test patterns
 
-## Running Tests
+## Running Go Tests
+
+The test commands the skill recommends for Go projects:
 
 ```bash
 # Unit tests only (default)
