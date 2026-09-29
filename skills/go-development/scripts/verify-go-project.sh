@@ -43,7 +43,7 @@ done
 MAIN_FILES=$(find "$PROJECT_DIR" -name "main.go" 2>/dev/null | head -5)
 if [[ -n "$MAIN_FILES" ]]; then
     echo "✅ Entry points found:"
-    echo "$MAIN_FILES" | while read f; do echo "   - $f"; done
+    echo "$MAIN_FILES" | while read -r f; do echo "   - $f"; done
 else
     echo "⚠️  No main.go found"
     ((WARNINGS++))
