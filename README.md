@@ -225,6 +225,37 @@ This skill focuses on Go code patterns and quality. For complete project setup:
 | `enterprise-readiness` | OpenSSF Scorecard, SLSA provenance, signed releases |
 | `security-audit` | OWASP Top 10, CVE analysis, security hardening |
 
+## Tests
+
+This section is about the tests of this repository; the Go test commands above are what the skill recommends for Go projects. The behavioural tests live in `tests/` and run offline; they need bash, git, python3 and the usual coreutils, find, grep and awk. No Go toolchain is needed:
+
+```bash
+bash tests/verify-go-project.sh    # skills/go-development/scripts/verify-go-project.sh
+bash tests/check-plugin-version.sh # Build/Scripts/check-plugin-version.sh and Build/hooks/pre-push
+```
+
+- `tests/verify-go-project.sh` runs the verifier against fixture projects with a stub `go` on `PATH` that records where `go vet` ran and exits with a chosen status, or with no `go` on `PATH` at all. It checks the exit codes, that every section runs after a failed item, the error and warning counts, and that a relative project path is resolved correctly.
+- `tests/check-plugin-version.sh` builds throwaway git repositories and checks that a semver tag at `HEAD` must match the version in `.claude-plugin/plugin.json`, and that the pre-push hook passes the result on.
+
+Each check prints `ok` or `FAIL`; a `FAIL` line names the expectation that was not met and is followed by the script's output. A test file exits 1 when any check failed. In CI, the Skill Tests workflow (`.github/workflows/tests.yml`) runs every `tests/**/*.sh` on each pull request and on pushes to `main`, and fails when the repository ships scripts under `skills/*/scripts/` but no test ran.
+
+`scripts/verify-harness.sh` has no test of its own; on pull requests, Harness Verification (`harness-verify.yml`) checks `AGENTS.md` (presence, length, links, documented commands) and `docs/ARCHITECTURE.md` with its own steps. The skill's Markdown is not executed here; Skill Validation and Eval Validation check its structure and the eval definitions in `skills/go-development/evals/evals.json`. A pull request that adds or changes behaviour in a script adds or updates a check in `tests/` that fails without the change.
+
+## Governance and policies
+
+This repository follows the Netresearch organisation policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles, how decisions are made and disputes resolved, and continuity.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and explicitly excluded work for the coming year.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): thresholds, deadlines and the exception process for dependency (SCA) and static analysis (SAST) findings.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): how CI and release credentials are stored, accessed and rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): who holds administrative access to this repository and the organisation.
+
+Checks that run on pull requests in this repository:
+
+- Every pull request: Skill Validation (`lint.yml`: skill structure, markdownlint, yamllint, actionlint, JSON syntax, ShellCheck, ruff, checkpoint schema), Eval Validation (`eval-validate.yml`) and Skill Tests (`tests.yml`).
+- Pull requests to `main`: `security.yml` with Betterleaks (secret scanning), zizmor (workflow static analysis), dependency review (fails on vulnerabilities of severity high or above), Composer Audit and Opengrep SAST (fails on findings of severity WARNING or above); Harness Verification (`harness-verify.yml`) and Template Drift (`check-template-drift.yml`).
+
 ## License
 
 This project uses split licensing:
