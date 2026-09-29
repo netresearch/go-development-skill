@@ -67,3 +67,4 @@ This repository contains no Go code; `go test` and `golangci-lint` are commands 
 - [Go Modernization](skills/go-development/references/modernization.md)
 - [Logging](skills/go-development/references/logging.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Security assurance case](docs/SECURITY-ASSURANCE.md)
