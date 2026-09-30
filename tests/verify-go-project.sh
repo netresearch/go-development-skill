@@ -8,7 +8,7 @@
 # Each case builds a throwaway project directory and runs the verifier against
 # it with a controlled PATH: a stub `go` records where `go vet` ran and exits
 # with the status the case asks for, or `go` is left off PATH entirely. No real
-# Go toolchain is needed. Requires bash and coreutils, find, grep and awk.
+# Go toolchain is needed. Requires bash and coreutils, find, grep, sed and awk.
 
 set -uo pipefail
 
