@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Resilience Patterns in Go
 
 For scheduled jobs, retry-with-backoff, circuit breaker, and timeout

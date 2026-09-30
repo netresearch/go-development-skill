@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Go Development Skill
 
 Production-grade Go development patterns for building resilient services, extracted from real-world projects including job schedulers, Docker integrations, and LDAP clients.
@@ -97,20 +100,36 @@ Example queries:
 
 ```
 go-development-skill/
-├── SKILL.md                              # Skill metadata and core patterns
-└── references/
-    ├── architecture.md                   # Package structure, state mutation completeness
-    ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
-    ├── resilience.md                     # Pointer to go-cron's resilience wrappers
-    ├── docker.md                         # Docker client patterns
-    ├── ldap.md                           # LDAP/Active Directory integration
-    ├── testing.md                        # Build tags, race and Fiber v2 gotchas
-    ├── linting.md                        # golangci-lint v2 configuration
-    ├── api-design.md                     # Enum/status defensive handling
-    ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
-    ├── mutation-testing.md               # Gremlins test quality measurement
-    ├── makefile.md                       # Standard Makefile interface
-    └── modernization.md                  # Go 1.26 modernizers, go fix, errors.AsType
+├── skills/go-development/
+│   ├── SKILL.md                              # Skill metadata and core patterns
+│   ├── checkpoints.yaml                      # Assessment checkpoints for Go projects
+│   ├── evals/evals.json                      # Skill evaluation cases
+│   ├── scripts/verify-go-project.sh          # Go project verification
+│   └── references/
+│       ├── api-design.md                     # Enum/status defensive handling
+│       ├── architecture.md                   # Package structure, state mutation completeness
+│       ├── awesome-go-submission.md          # Submitting a project to awesome-go
+│       ├── branch-protection.md              # Branch protection standard for Go repos
+│       ├── contracts-and-invariants.md       # Contracts and invariants
+│       ├── cron-scheduling.md                # go-cron: named jobs, updates, context, resilience
+│       ├── dependencies.md                   # Dependency upgrades
+│       ├── docker.md                         # Docker client patterns
+│       ├── fuzz-testing.md                   # Go fuzzing patterns, security seeds
+│       ├── ldap.md                           # LDAP/Active Directory integration
+│       ├── lefthook-template.md              # Lefthook git hooks for Go projects
+│       ├── linting.md                        # golangci-lint v2 configuration
+│       ├── logging.md                        # Structured logging with log/slog
+│       ├── makefile.md                       # Standard Makefile interface
+│       ├── modernization.md                  # Go 1.26 modernizers, go fix, errors.AsType
+│       ├── mutation-testing.md               # Gremlins test quality measurement
+│       ├── resilience.md                     # Pointer to go-cron's resilience wrappers
+│       ├── reusable-workflows.md             # Reusable GitHub workflows for Go repos
+│       ├── single-build-release.md           # Single-build release pipeline
+│       └── testing.md                        # Build tags, race and Fiber v2 gotchas
+├── Build/                                    # Plugin version check and pre-push hook
+├── scripts/verify-harness.sh                 # Agent harness consistency checker
+├── tests/                                    # Behavioural tests for the scripts
+└── docs/ARCHITECTURE.md                      # Architecture of this repository
 ```
 
 ## Expertise Areas
@@ -148,7 +167,9 @@ go-development-skill/
 - Resource isolation (one instance per test)
 - Fiber v2 test patterns
 
-## Running Tests
+## Running Go Tests
+
+The test commands the skill recommends for Go projects:
 
 ```bash
 # Unit tests only (default)
@@ -203,6 +224,40 @@ This skill focuses on Go code patterns and quality. For complete project setup:
 | `github-project` | Repository setup, branch protection, auto-merge workflows |
 | `enterprise-readiness` | OpenSSF Scorecard, SLSA provenance, signed releases |
 | `security-audit` | OWASP Top 10, CVE analysis, security hardening |
+
+## Tests
+
+This section is about the tests of this repository; the Go test commands above are what the skill recommends for Go projects. The behavioural tests live in `tests/` and run offline; they need bash, git, python3 and the usual coreutils, find, grep, sed and awk. No Go toolchain is needed:
+
+```bash
+bash tests/verify-go-project.sh    # skills/go-development/scripts/verify-go-project.sh
+bash tests/check-plugin-version.sh # Build/Scripts/check-plugin-version.sh and Build/hooks/pre-push
+```
+
+- `tests/verify-go-project.sh` runs the verifier against fixture projects with a stub `go` on `PATH` that records where `go vet` ran and exits with a chosen status, or with no `go` on `PATH` at all. It checks the exit codes, that every section runs after a failed item, the error and warning counts, and that a relative project path is resolved correctly.
+- `tests/check-plugin-version.sh` builds throwaway git repositories and checks that a semver tag at `HEAD` must match the version in `.claude-plugin/plugin.json`, and that the pre-push hook passes the result on.
+
+Each check prints `ok` or `FAIL`; a `FAIL` line names the expectation that was not met and is followed by the script's output. A test file exits 1 when any check failed. In CI, the Skill Tests workflow (`.github/workflows/tests.yml`) runs every `tests/**/*.sh` on each pull request and on pushes to `main`, and fails when the repository ships scripts under `skills/*/scripts/` but no test ran.
+
+`scripts/verify-harness.sh` has no test of its own; on pull requests, Harness Verification (`harness-verify.yml`) checks `AGENTS.md` (presence, length, links, documented commands) and `docs/ARCHITECTURE.md` with its own steps. The skill's Markdown is not executed here; Skill Validation and Eval Validation check its structure and the eval definitions in `skills/go-development/evals/evals.json`. A pull request that adds or changes behaviour in a script adds or updates a check in `tests/` that fails without the change.
+
+## Governance and policies
+
+This repository follows the Netresearch organisation policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles, how decisions are made and disputes resolved, and continuity.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and explicitly excluded work for the coming year.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): thresholds, deadlines and the exception process for dependency (SCA) and static analysis (SAST) findings.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): how CI and release credentials are stored, accessed and rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): who holds administrative access to this repository and the organisation.
+
+The security assurance case for this skill (threat model, trust boundaries, countermeasures and limits) is in [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md).
+
+Checks that run on pull requests in this repository:
+
+- Every pull request: Skill Validation (`lint.yml`: skill structure, markdownlint, yamllint, actionlint, JSON syntax, ShellCheck, ruff, checkpoint schema), Eval Validation (`eval-validate.yml`) and Skill Tests (`tests.yml`).
+- Pull requests to `main`: `security.yml` with Betterleaks (secret scanning), zizmor (workflow static analysis), dependency review, Composer Audit and Opengrep SAST (both behind a preflight event-gate job); Harness Verification (`harness-verify.yml`) and Template Drift (`check-template-drift.yml`). The organisation's security policy sets when dependency review and Opengrep fail: see [dependencies](https://github.com/netresearch/.github/blob/main/SECURITY.md#dependencies-software-composition-analysis) and [static analysis (SAST)](https://github.com/netresearch/.github/blob/main/SECURITY.md#static-analysis-sast).
+- Also on every pull request: Labeler (`labeler.yml`), the DCO sign-off check, SonarCloud Code Analysis and the CodeRabbit review status (GitHub Apps) and, for dependency-update pull requests, auto-merge (`auto-merge-deps.yml`). CodeQL for `actions` runs through GitHub's default setup.
 
 ## License
 

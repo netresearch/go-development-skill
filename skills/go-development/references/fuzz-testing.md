@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Go Fuzz Testing
 
 Go 1.18+ includes built-in fuzzing support. This guide covers patterns for security-focused fuzz testing.

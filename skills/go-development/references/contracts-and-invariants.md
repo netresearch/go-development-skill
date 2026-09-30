@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Contracts & Invariants
 
 Encode preconditions, postconditions, and invariants as runtime checks in the code path. Treat them as the bridge between a spec sentence and the tests that verify it.

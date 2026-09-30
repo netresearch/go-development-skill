@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Cron Scheduling with go-cron
 
 [`github.com/netresearch/go-cron`](https://github.com/netresearch/go-cron) is a maintained fork of `robfig/cron` — the most popular cron library for Go — with bug fixes, runtime schedule updates, per-entry context, resilience middleware, and modern toolchain support.
