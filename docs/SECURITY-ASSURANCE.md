@@ -57,7 +57,7 @@ Which of these checks must pass before a pull request can merge is set in the br
 
 - **Least privilege:** the verifier and the checkpoints only read; `verify-harness.sh` sends one read request. Workflows start from `permissions: {}` and grant per job.
 - **Fail-safe defaults:** the verifier exits 1 on any error and prints every check; `check-plugin-version.sh` fails when it cannot read a version while a semver tag is present.
-- **Economy of mechanism:** the scripts need bash, coreutils, `find`, `grep`, `awk`, `git` and, for the version check, `python3`; the verifier uses `go` only when it is installed.
+- **Economy of mechanism:** the scripts need bash, coreutils, `find`, `grep`, `sed`, `awk`, `git` and, for the version check, `python3`; the verifier uses `go` only when it is installed.
 - **Open design:** everything the skill tells an agent to do is plain text in `SKILL.md` and `references/`, reviewable before use.
 
 ## What a user cannot expect

@@ -8,7 +8,7 @@
 #
 # Each case builds a throwaway git repository with a .claude-plugin/plugin.json
 # and an optional tag, runs the check inside it, and compares the exit code.
-# Requires bash, git and python3 (the script parses plugin.json with python3).
+# Requires bash, git, sed and python3 (the script parses plugin.json with python3).
 
 set -uo pipefail
 
