@@ -19,7 +19,7 @@ The repository ships no server component, no container image and no Go code. It 
 
 ## Security requirements
 
-1. `verify-go-project.sh` and the checkpoints only read the assessed project: they change no file in it.
+1. The file checks of `verify-go-project.sh` and the checkpoints only read the assessed project: they change no file in it. The verifier also runs `go vet ./...` when Go is installed; the Go toolchain may then update `go.mod` and `go.sum` if `GOFLAGS` contains `-mod=mod`, and it writes to the Go build cache.
 2. The verifier reports every check it runs and fails when a required item (`go.mod`, a clean `go vet`) is missing, so a failed result is not hidden by an earlier one.
 3. Nothing committed to this repository contains a secret.
 4. A release carries the version that `.claude-plugin/plugin.json` states, and its archives can be verified against the build that produced them.
@@ -55,7 +55,7 @@ Which of these checks must pass before a pull request can merge is set in the br
 
 ## Secure design principles applied
 
-- **Least privilege:** the verifier and the checkpoints only read; `verify-harness.sh` sends one read request. Workflows start from `permissions: {}` and grant per job.
+- **Least privilege:** the file checks of the verifier and the checkpoints only read (for `go vet`, see requirement 1); `verify-harness.sh` sends one read request. Workflows start from `permissions: {}` and grant per job.
 - **Fail-safe defaults:** the verifier exits 1 on any error and prints every check; `check-plugin-version.sh` fails when it cannot read a version while a semver tag is present.
 - **Economy of mechanism:** the scripts need bash, coreutils, `find`, `grep`, `sed`, `awk`, `git` and, for the version check, `python3`; the verifier uses `go` only when it is installed.
 - **Open design:** everything the skill tells an agent to do is plain text in `SKILL.md` and `references/`, reviewable before use.
