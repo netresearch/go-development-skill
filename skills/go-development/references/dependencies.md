@@ -25,6 +25,30 @@ including `terraform-json` 0.27.2 → 0.28.0 and `terraform-exec` 0.25.1 → 0.2
 both in the build. Only `go get -u all` moved them. The claim "all dependencies
 upgraded" was wrong until challenged.
 
+### When `go get -u all` aborts
+
+`go get -u all` fails as a whole, and changes nothing, when the newest version of
+some module in the graph no longer contains a package that another module still
+imports. Measured on ldap-manager, 2026-10-23:
+
+```
+go: all: module github.com/gobwas/glob@upgrade found (v1.0.0), but does not contain package github.com/gobwas/glob/compiler
+go: all: module github.com/prometheus/procfs@upgrade found (v0.22.0), but does not contain package github.com/prometheus/procfs/internal/util
+```
+
+Neither module is in the build or the tests. `go mod why -m` traces both to
+golangci-lint, which that `go.mod` lists in its `tool` block, so `all` takes in
+the linter's whole dependency tree. Forcing those modules is not the fix. Run `go get -u ./...`, then raise each module that is outdated **and in the
+build** by name, with the list from
+[Scope the claim](#scope-the-claim-to-what-is-actually-in-the-build):
+
+```bash
+go get -u ./...
+# Repeat for each module the comm -12 command below prints:
+go get example.com/module/path@latest
+go mod tidy
+```
+
 Always confirm with the tool, not the transcript:
 
 ```bash
