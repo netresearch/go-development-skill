@@ -44,7 +44,8 @@ build** by name, with the list from
 
 ```bash
 go get -u ./...
-go get <module>@latest ...   # one per line of the comm -12 output below
+# Repeat for each module the comm -12 command below prints:
+go get example.com/module/path@latest
 go mod tidy
 ```
 
