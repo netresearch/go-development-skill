@@ -258,6 +258,39 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 
 **Rule**: RLock is ONLY safe when the entire operation is read-only. Any write (including updating timestamps, counters, or "metadata") requires a full Lock.
 
+### Testing an Interleaving: Hold the Lock, Don't Stress It
+
+A test that repeats a scenario many times and hopes one round lands in the critical window is a weak guard. The window is often microseconds wide, so the test stays green when the fix is removed. In [ofelia#900](https://github.com/netresearch/ofelia/pull/900), a 30-round test caught its target mutation in 3 of 3 runs under `-race` but in only 1 of 3 runs without the race detector.
+
+Two approaches are reliable:
+
+1. **Remove the window.** If two operations race because one of them runs outside the lock that orders the other, take that lock. In [ofelia#900](https://github.com/netresearch/ofelia/pull/900), the end of a run takes the registration mutex around the step that races a job update, so the update can no longer fall in between.
+2. **Hold the window open from the test.** When production code performs step A, then takes a mutex, then performs step B, a test that holds that mutex stops the code exactly between A and B. Let the competing goroutine run into the window, then release the mutex and assert. [ofelia#901](https://github.com/netresearch/ofelia/pull/901) holds the scheduler's mutex while `RemoveJob` runs, so `RemoveJob` stops after deleting the cron entry and before updating the job maps. The test passes 10 of 10 runs on the current code and fails 10 of 10 with the mutation.
+
+```go
+s.mu.Lock()
+var unlock sync.Once
+done := make(chan struct{})
+t.Cleanup(func() { // a failed assertion must not leave the lock held or the goroutine running
+	unlock.Do(s.mu.Unlock)
+	<-done
+})
+
+go func() { defer close(done); _ = s.RemoveJob(j) }() // stops at s.mu.Lock(), after step A
+// stepADone is a func() bool that reports step A's observable effect,
+// for example that the cron entry is gone. Step B cannot run while the
+// test holds s.mu, so RemoveJob need not have blocked yet.
+require.Eventually(t, stepADone, 5*time.Second, time.Millisecond)
+// ... let the competing operation run in the window ...
+unlock.Do(s.mu.Unlock)
+<-done
+// assert on the state the window must not corrupt
+```
+
+- **Prove the window is reached.** Instrument it once in a scratch copy, or show that a mutation of the guarded code fails the test every time. A test that never enters the window passes for the wrong reason.
+- **`sync.RWMutex` ordering:** when a writer unlocks, readers that were already blocked get the lock before a writer that is also waiting. A goroutine that blocks on `RLock` while the test holds `Lock` therefore runs before the production writer waiting behind it. That is what lets the test observe the old state in the window. This is how the standard library implements `Unlock` (`src/sync/rwmutex.go`), not a documented guarantee; the documentation promises only that a blocked `Lock` keeps new readers out.
+- **Assert on the attempt, not only on the outcome.** If the competing operation can be skipped silently (a full concurrency limit, a paused entry), assert that it did not run *and* that the state it would have consumed is still there.
+
 ## Common Gotchas
 
 ### Integer to String Conversion
