@@ -270,12 +270,18 @@ Two approaches are reliable:
 ```go
 s.mu.Lock()
 var unlock sync.Once
-t.Cleanup(func() { unlock.Do(s.mu.Unlock) }) // a failed assertion must not leave the lock held
-
 done := make(chan struct{})
+t.Cleanup(func() { // a failed assertion must not leave the lock held or the goroutine running
+	unlock.Do(s.mu.Unlock)
+	<-done
+})
+
 go func() { defer close(done); _ = s.RemoveJob(j) }() // stops at s.mu.Lock(), after step A
+// stepADone is a func() bool that reports step A's observable effect,
+// for example that the cron entry is gone. Step B cannot run while the
+// test holds s.mu, so RemoveJob need not have blocked yet.
 require.Eventually(t, stepADone, 5*time.Second, time.Millisecond)
-// ... let the competing operation reach the window ...
+// ... let the competing operation run in the window ...
 unlock.Do(s.mu.Unlock)
 <-done
 // assert on the state the window must not corrupt
