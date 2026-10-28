@@ -246,6 +246,39 @@ resp, err := client.Do(req) //nolint:gosec,nolintlint // G704: URL is a compile-
 **Best practice**: Pin the golangci-lint version in CI to match local, or accept
 the dual-nolint pattern for edge cases.
 
+### Standalone gosec: Reproduce the CI Run, Suppress With `#nosec`
+
+The shared `go-check` workflow also runs gosec on its own (check `go-check /
+gosec`) and uploads the result to code scanning. Its findings arrive as review
+threads from `github-advanced-security`, outside golangci-lint. Two things
+differ from the golangci-lint case above:
+
+- A locally installed gosec built with an older Go toolchain can miss findings
+  the CI run reports, without failing. Its type checker cannot load code for a
+  newer Go version, it logs `package <name> has type errors, skipping SSA
+  analysis`, and every SSA-based rule — G115 among them — reports nothing.
+  Run the current release with the project's toolchain instead of the
+  installed binary:
+
+  ```bash
+  go run github.com/securego/gosec/v2/cmd/gosec@latest ./...
+  ```
+
+- Standalone gosec reads `#nosec`, not `//nolint`. State the bound that makes
+  the conversion safe after `--`:
+
+  ```go
+  secRem := uint64(floorMod(t.Unix(), int64(d))) // #nosec G115 -- in [0, d)
+  ```
+
+  Check that the comment is what clears the line: `gosec -nosec ./...` ignores
+  every `#nosec`, so the suppressed lines must come back in that run.
+
+Observed on netresearch/go-cron#440 (2026-10-25) under Go 1.27.3: G115
+findings (integer conversion overflow) in `aligned.go` came from CI only. The
+installed gosec 2.29.0 logged the SSA skip and reported none; `go run
+…/gosec@latest -nosec` reported the four suppressed lines.
+
 ## Common Linter Gotchas
 
 ### The Default Output Cap Silently Truncates
