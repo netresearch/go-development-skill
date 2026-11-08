@@ -399,7 +399,7 @@ import cron "github.com/netresearch/go-cron"
 
 Key behavior differences:
 - **DOM/DOW matching**: Uses AND logic (both must match) instead of OR
-- **DST spring-forward**: Jobs in skipped hour run immediately instead of being silently skipped
+- **DST spring-forward**: A time the gap skips runs once, shifted by the length of the gap (2:30 runs at 3:30), instead of being silently skipped; `DSTSkip` (or `RobfigCompat`) restores the skip
 - **Chain execution**: `Entry.Run()` properly invokes chain wrappers
 
 See the [migration guide](https://github.com/netresearch/go-cron/blob/main/docs/MIGRATION.md) for full details.
