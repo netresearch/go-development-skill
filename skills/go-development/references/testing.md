@@ -134,9 +134,15 @@ timers is slow and flaky. Don't hand-roll a `Clock`/`FakeClock` abstraction:
   `references/cron-scheduling.md` § Testing with FakeClock.
 - Code that calls `time.Now`, `time.Sleep` or a timer directly: run the test
   inside `synctest.Test` from `testing/synctest` (Go 1.25 and later). Inside
-  the bubble the clock is fake, so `time.Sleep` returns at once and moves
-  `time.Now` forward by exactly the slept duration. The production code needs
-  no clock parameter, and the test does not write unexported fields.
+  the bubble the clock is fake: it advances only when every goroutine in the
+  bubble is durably blocked, and then `time.Sleep` returns at once with
+  `time.Now` moved forward by exactly the slept duration. A goroutine waiting
+  on network I/O is not durably blocked, so it stops the clock; use an
+  in-memory fake connection there. The production code needs no clock
+  parameter, and the test does not write unexported fields.
+- When the code under test starts goroutines, call `synctest.Wait()` before
+  the test reads state they write. `time.Sleep` moves the clock but does not
+  order memory, so `-race` reports the read otherwise.
 
 ```go
 func TestRateLimiter_RefillCap(t *testing.T) {
