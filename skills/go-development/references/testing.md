@@ -128,9 +128,39 @@ Two traps beyond the timeout:
 ## Time Control
 
 Testing time-dependent code (schedulers, caches, rate limiters) with real
-timers is slow and flaky. Don't hand-roll a `Clock`/`FakeClock` abstraction —
-go-cron ships one; see `references/cron-scheduling.md` § Testing with
-FakeClock.
+timers is slow and flaky. Don't hand-roll a `Clock`/`FakeClock` abstraction:
+
+- Jobs scheduled through go-cron: use its `FakeClock`; see
+  `references/cron-scheduling.md` § Testing with FakeClock.
+- Code that calls `time.Now`, `time.Sleep` or a timer directly: run the test
+  inside `synctest.Test` from `testing/synctest` (Go 1.25 and later). Inside
+  the bubble the clock is fake: it advances only when every goroutine in the
+  bubble is durably blocked, and then `time.Sleep` returns at once with
+  `time.Now` moved forward by exactly the slept duration. A goroutine waiting
+  on network I/O is not durably blocked, so it stops the clock; use an
+  in-memory fake connection there. The production code needs no clock
+  parameter, and the test does not write unexported fields.
+- When the code under test starts goroutines, call `synctest.Wait()` before
+  the test reads state they write. `time.Sleep` moves the clock but does not
+  order memory, so `-race` reports the read otherwise.
+
+```go
+func TestRateLimiter_RefillCap(t *testing.T) {
+    synctest.Test(t, func(t *testing.T) {
+        rl := NewRateLimiter(0.01, 5) // 0.01 tokens/s, burst 5
+        rl.Allow()
+        time.Sleep(1000 * time.Second) // fake: 10 tokens' worth, capped at 5
+        for i := range 5 {
+            if !rl.Allow() {
+                t.Fatalf("Allow %d refused", i)
+            }
+        }
+        if rl.Allow() {
+            t.Fatal("6th Allow passed: refill is not capped")
+        }
+    })
+}
+```
 
 ## Resource Isolation: One Instance Per Test
 
