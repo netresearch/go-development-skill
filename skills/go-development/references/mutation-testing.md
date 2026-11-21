@@ -197,9 +197,10 @@ question; a package that does not compile is not.
 ```makefile
 .PHONY: mutation
 mutation:
-	@rm -f mutation-report.json
+	@rm -f mutation-report.json mutation-output.txt
 	@echo "Running mutation tests..."
-	@gremlins unleash --config=.gremlins.yaml; rc=$$?; \
+	@gremlins unleash --config=.gremlins.yaml > mutation-output.txt 2>&1; rc=$$?; \
+	cat mutation-output.txt; \
 	if [ $$rc -eq 10 ] || [ $$rc -eq 11 ]; then \
 	  echo "mutation score at or below the threshold (exit $$rc)"; \
 	elif [ $$rc -ne 0 ]; then exit $$rc; fi
@@ -208,13 +209,17 @@ mutation:
 mutation-report: mutation
 	@if [ -f mutation-report.json ]; then \
 	  jq '{test_efficacy, mutations_coverage, mutants_killed, mutants_lived}' mutation-report.json; \
-	else echo "no mutation-report.json: gremlins found no mutant"; fi
+	elif grep -qx 'No results to report.' mutation-output.txt; then \
+	  echo "no mutation-report.json: gremlins found no mutant"; \
+	else echo "gremlins wrote no mutation-report.json; see its output above"; exit 1; fi
 ```
 
 gremlins writes the report before it exits 10 or 11 on a score at or below
 the threshold, so `mutation` reports such a run and fails only on an error
 (exit 1). Without any mutant gremlins prints `No results to report.` and writes
-no report; the stale file is removed first so `jq` never reads an old run.
+no report. When it cannot write the report it logs the error and still exits
+0, so `mutation-report` fails unless the log shows the no-mutant case. The
+stale files are removed first so `jq` never reads an old run.
 
 ## Improving Mutation Score
 
