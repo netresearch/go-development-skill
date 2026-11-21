@@ -19,59 +19,82 @@ gremlins unleash --config=.gremlins.yaml
 
 ## Configuration
 
-Create `.gremlins.yaml` in project root:
+Create `.gremlins.yaml` in project root. gremlins v0.6.0 reads only the keys of
+its [reference configuration](https://gremlins.dev/latest/usage/configuration/):
+settings for `gremlins unleash` go under `unleash:`, mutators under `mutants:`.
 
 ```yaml
-# Packages to test
-test-packages:
-  - .
-  - ./cmd/...
-  - ./internal/...
+unleash:
+  # Machine-readable report (JSON; gremlins writes no HTML report)
+  output: mutation-report.json
+  # Multiplier for the per-mutant test timeout (default 3)
+  timeout-coefficient: 5
+  # gremlins exits with code 10 when the efficacy is at or below this value
+  threshold:
+    efficacy: 60
+  # Regular expressions on the path relative to the module root.
+  # Test files (_test.go) are always excluded.
+  exclude-files:
+    - "(^|/)test/"         # Test helpers
+    - "(^|/)mock/"         # Mock implementations
+    - "(^|/)generated/"    # Generated code
 
-# Mutator types to enable
-mutators:
-  - CONDITIONALS_BOUNDARY    # Change < to <=, > to >=
-  - CONDITIONALS_NEGATION    # Negate conditions (== to !=)
-  - INCREMENT_DECREMENT      # Change ++ to --
-  - INVERT_LOGICAL           # Invert && to ||
-  - INVERT_NEGATIVES         # Remove negation operators
-  - INVERT_LOOPCTRL          # Change break to continue
-
-# Files/patterns to exclude
-exclude:
-  - "**/*_test.go"           # Test files
-  - "**/test/**"             # Test helpers
-  - "**/mock/**"             # Mock implementations
-  - "**/generated/**"        # Generated code
-
-# Only mutate code covered by tests
-coverage: true
-
-# Minimum acceptable mutation score (%)
-threshold: 60
-
-# Timeout multiplier for test runs
-timeout-coefficient: 5
-
-# Output reports
-output:
-  json: mutation-report.json
-  html: mutation-report.html
-
-# Test timeout
-test-timeout: 120s
+mutants:
+  arithmetic-base:
+    enabled: false           # on by default
+  conditionals-boundary:
+    enabled: true            # < to <=, > to >=
+  conditionals-negation:
+    enabled: true            # == to !=
+  increment-decrement:
+    enabled: true            # ++ to --
+  invert-logical:
+    enabled: true            # && to || (off by default)
+  invert-negatives:
+    enabled: true            # -x to x
+  invert-loopctrl:
+    enabled: true            # break to continue (off by default)
 ```
+
+gremlins has no package list: it mutates the module below the path given to
+`gremlins unleash [path]`. Narrow the scope with `exclude-files`. Go's regexp
+has no lookahead, so name each excluded directory (`"^cmd/"`).
+
+### gremlins v0.6.0 traps
+
+- **Unknown keys are ignored without a warning.** A top-level `threshold:`,
+  `exclude:`, `mutators:`, `coverage:` or `test-packages:` changes nothing,
+  and gremlins runs with its defaults: in two repositories this went unnoticed
+  for months. The shared `go-mutation-testing.yml` fails on such keys; check
+  another setup against `gremlins unleash --help`, whose flag names are the
+  `unleash.` keys. The JSON schema on gremlins.dev is no check: it allows
+  unknown keys and lacks `diff` and `exclude-files`.
+- **`exclude-files` takes regular expressions, not globs.** `"**/mock/**"` stops
+  gremlins with `error parsing regexp`; write `"(^|/)mock/"`.
+- **An empty diff means "everything changed".** With `--diff <ref>` and no
+  change against the ref, gremlins mutates every line. Skip the run when
+  `git diff --quiet --merge-base <ref> -- '*.go'` exits 0.
+- **Diff ranges are per hunk.** gremlins treats the added lines of one hunk as
+  one contiguous range from the first added line on, so added lines further
+  down the same hunk can fall outside it.
+- **`No results to report.`** is all gremlins prints, with exit 0, when it
+  finds no mutant at all; there are no count lines to parse.
+- **Exit codes:** 0 for a finished run, 10 or 11 when the efficacy or mutant
+  coverage is at or below its threshold, 1 for an error.
 
 ## Understanding Results
 
 | Metric | Meaning |
 |--------|---------|
 | **Killed** | Tests detected the mutation (good!) |
-| **Survived** | Tests missed the mutation (needs improvement) |
-| **Timed Out** | Tests hung on mutation (usually killed) |
-| **Skipped** | Excluded from analysis |
+| **Lived** | Tests missed the mutation (needs improvement) |
+| **Not covered** | No test covers the line; gremlins does not run it |
+| **Timed out** | The tests did not finish within the timeout |
+| **Skipped** | Outside the diff in `--diff` mode |
 
-**Test Efficacy** = (Killed + Timed Out) / Total Mutations
+**Test Efficacy** = Killed / (Killed + Lived). Timed-out and not-covered
+mutants do not count, so a run with Killed 0 and Lived 0 prints 0.00% without
+having measured anything.
 
 Target: **60%+ for production code**
 
@@ -130,9 +153,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mutation-reports
-          path: |
-            mutation-report.json
-            mutation-report.html
+          path: mutation-report.json
 ```
 
 ### Diff-Based Testing (PRs only)
@@ -176,14 +197,29 @@ question; a package that does not compile is not.
 ```makefile
 .PHONY: mutation
 mutation:
+	@rm -f mutation-report.json mutation-output.txt
 	@echo "Running mutation tests..."
-	@gremlins unleash --config=.gremlins.yaml
+	@gremlins unleash --config=.gremlins.yaml > mutation-output.txt 2>&1; rc=$$?; \
+	cat mutation-output.txt; \
+	if [ $$rc -eq 10 ] || [ $$rc -eq 11 ]; then \
+	  echo "mutation score at or below the threshold (exit $$rc)"; \
+	elif [ $$rc -ne 0 ]; then exit $$rc; fi
 
 .PHONY: mutation-report
 mutation-report: mutation
-	@echo "Opening mutation report..."
-	@open mutation-report.html 2>/dev/null || xdg-open mutation-report.html
+	@if [ -f mutation-report.json ]; then \
+	  jq '{test_efficacy, mutations_coverage, mutants_killed, mutants_lived}' mutation-report.json; \
+	elif grep -qx 'No results to report.' mutation-output.txt; then \
+	  echo "no mutation-report.json: gremlins found no mutant"; \
+	else echo "gremlins wrote no mutation-report.json; see its output above"; exit 1; fi
 ```
+
+gremlins writes the report before it exits 10 or 11 on a score at or below
+the threshold, so `mutation` reports such a run and fails only on an error
+(exit 1). Without any mutant gremlins prints `No results to report.` and writes
+no report. When it cannot write the report it logs the error and still exits
+0, so `mutation-report` fails unless the log shows the no-mutant case. The
+stale files are removed first so `jq` never reads an old run.
 
 ## Improving Mutation Score
 
@@ -279,7 +315,7 @@ GUID, the second parses as a GUID, and two calls differ" are invariants; "equals
 
 1. **Start with 60% threshold** - Increase as tests mature
 2. **Exclude generated code** - Focus on hand-written logic
-3. **Use coverage mode** - Only mutate tested code
+3. **Check the config keys** - gremlins ignores unknown keys without a warning
 4. **Run on CI** - Catch regressions early
 5. **Diff mode for PRs** - Full runs on main branch only
 
