@@ -59,6 +59,7 @@ Load as needed:
 | `references/api-design.md` | Enum/status defensive handling |
 | `references/fuzz-testing.md` | Go fuzzing patterns, security seeds |
 | `references/contracts-and-invariants.md` | Contracts, invariants, property tests |
+| `references/filepath-globs.md` | Deciding from whether a config path exists: Glob error loss, `\` on Windows, Lstat |
 | `references/mutation-testing.md` | Gremlins configuration, test quality measurement |
 | `references/makefile.md` | Standard Makefile interface for CI/CD |
 | `references/performance.md` | Profiling and benchmark A/B, GOMAXPROCS in containers, inlining and PGO, os/exec copy buffers |
