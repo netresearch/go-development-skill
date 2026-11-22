@@ -100,8 +100,9 @@ yourself. The runtime reads only the CPU limit of the process's own cgroup,
 not of its parents, through its internal `internal/runtime/cgroup` package
 (cgroup v1 and v2, mount lookup in `/proc/self/mountinfo`); a copy of that
 lookup is hundreds of lines and can drift from a later Go version. Take the
-limit from the container runtime (`docker inspect`, `HostConfig.NanoCpus`)
-instead. [netresearch/ofelia#972](https://github.com/netresearch/ofelia/pull/972)
+limit from the container runtime instead: `docker inspect` shows it in
+`HostConfig.NanoCpus` (`--cpus`) or in `HostConfig.CpuQuota` divided by
+`HostConfig.CpuPeriod` (`--cpu-quota`). [netresearch/ofelia#972](https://github.com/netresearch/ofelia/pull/972)
 is an example; its first version copied the lookup, walked the parent
 cgroups, and showed a limit the runtime ignores.
 
