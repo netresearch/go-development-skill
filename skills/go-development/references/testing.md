@@ -584,6 +584,7 @@ an isolated environment:
 ```go
 var gitEnv = append(os.Environ(),
     "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1",
+    "GIT_CONFIG_COUNT=0", // drops inherited GIT_CONFIG_KEY_n/VALUE_n overrides
     "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.org",
     "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.org",
 )
@@ -592,8 +593,11 @@ cmd := exec.Command("git", "-C", dir, "tag", "-m", "t", "v1.0.0")
 cmd.Env = gitEnv
 ```
 
-Run the test once locally with `GIT_CONFIG_GLOBAL=/dev/null` to see the
-runner's view.
+`exec.Cmd` keeps the last value of a duplicated variable, so these entries
+win over inherited ones. `GIT_CONFIG_GLOBAL` needs Git 2.32 or later; older
+Git reads `$HOME/.gitconfig`, so point `HOME` and `XDG_CONFIG_HOME` at
+`t.TempDir()` there. Run the test once locally with
+`GIT_CONFIG_GLOBAL=/dev/null` to see the runner's view.
 
 ### Allocation Assertions Under -race
 
