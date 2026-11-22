@@ -65,6 +65,7 @@ This repository contains no Go code; `go test` and `golangci-lint` are commands 
 - [Mutation Testing](skills/go-development/references/mutation-testing.md)
 - [Makefile Patterns](skills/go-development/references/makefile.md)
 - [Go Modernization](skills/go-development/references/modernization.md)
+- [Performance](skills/go-development/references/performance.md)
 - [Logging](skills/go-development/references/logging.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Security assurance case](docs/SECURITY-ASSURANCE.md)
