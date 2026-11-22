@@ -16,7 +16,7 @@ pre-commit:
   parallel: true
   commands:
     go-mod-tidy:
-      run: go mod tidy -diff 2>/dev/null || (echo "Run: go mod tidy" && exit 1)
+      run: 'go mod tidy -diff 2>/dev/null || (echo "Run: go mod tidy" && exit 1)'
     go-vet:
       glob: "*.go"
       run: go vet ./...
@@ -49,9 +49,44 @@ pre-push:
       # testing.Short() guards. Set -timeout to cover your slowest
       # *unguarded* package, or the push fails on every push.
       run: go test -short -timeout=60s ./...
+    signatures:
+      # A push of unsigned commits succeeds; a required-signatures rule then
+      # blocks the merge after a full CI run. git's pre-push input names the
+      # refs, so the step needs use_stdin (without it, the step hung on read
+      # with lefthook 1.13.6).
+      use_stdin: true
+      run: |
+        while read -r _ local_sha _ remote_sha; do
+          case "$local_sha" in *[!0]*) ;; *) continue ;; esac  # a deleted ref
+          case "$remote_sha" in
+            *[!0]*) if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+                      range="$remote_sha..$local_sha"
+                    else
+                      range="$local_sha --not --remotes"      # force push without a fetch
+                    fi ;;
+            *) range="$local_sha --not --remotes" ;;          # a new branch
+          esac
+          list=$(git rev-list $range) || { echo "rev-list failed for $range"; exit 1; }
+          bad=$(for c in $list; do
+                  git cat-file commit "$c" | awk '/^$/ {exit} /^gpgsig/ {s=1} END {exit !s}' \
+                    || git log -1 --format='%h %s' "$c"
+                done)
+          [ -z "$bad" ] || { printf 'Unsigned commits:\n%s\n' "$bad"; exit 1; }
+        done
 ```
 
 Customize per project: add security scanning (gosec), mutation testing, etc.
+
+**Unsigned commits after a rebase.** `git rebase` decides about signing when
+it starts, so a repository-local `commit.gpgsign false` leaves every replayed
+commit unsigned, and `-c commit.gpgsign=true` on `git rebase --continue` does
+not change that. The `signatures` step stops such a push before CI runs.
+Re-sign with `git rebase --exec 'git commit --amend --no-edit -S --signoff'
+<base>` (add `--rebase-merges` when the branch contains merge commits, or the
+rebase flattens them and drops their conflict resolutions), and start the next
+rebase with `git rebase -S`. Commits already on another remote are not
+checked: they are published history, and re-signing them would rewrite it. Drop the step in a
+repository whose commits are not signed.
 
 **Pre-push timeout pitfall.** The `-short -timeout=60s` smoke-test stays fast
 *only if* slow/integration tests honor `-short` with a
