@@ -572,6 +572,53 @@ Verify the fix by what it leaves behind, not by the exit code alone: after a
 green run the port must be free (`ss -ltnp | grep :<port>`). A run that passes
 while leaking the daemon has not been fixed, it has been raced.
 
+### Git Fixtures Need Their Own Identity and Config
+
+A test that builds a git repository in `t.TempDir()` passes on a developer's
+machine through the global git config and fails on a CI runner, which has no
+identity: an annotated tag (`git tag -m`) needs a tagger and stops with
+`Committer identity unknown`. A developer's `tag.gpgSign` or
+`commit.gpgsign` breaks it the other way. Give every git call of the fixture
+an isolated environment:
+
+```go
+var gitEnv = append(os.Environ(),
+    "GIT_CONFIG_GLOBAL="+os.DevNull, "GIT_CONFIG_NOSYSTEM=1",
+    "GIT_CONFIG_COUNT=0", // drops inherited GIT_CONFIG_KEY_n/VALUE_n overrides
+    "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.org",
+    "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.org",
+)
+
+cmd := exec.Command("git", "-C", dir, "tag", "-m", "t", "v1.0.0")
+cmd.Env = gitEnv
+```
+
+`exec.Cmd` keeps the last value of a duplicated variable, so these entries
+win over inherited ones. `GIT_CONFIG_GLOBAL` needs Git 2.32 or later; older
+Git reads `$HOME/.gitconfig`, so point `HOME` and `XDG_CONFIG_HOME` at
+`t.TempDir()` there. Run the test once locally with
+`GIT_CONFIG_GLOBAL=/dev/null` to see the runner's view.
+
+### Allocation Assertions Under -race
+
+A test that asserts "this copy allocates no new buffer" has two traps:
+
+- `runtime.MemStats.TotalAlloc` is process-wide, so goroutines of other
+  tests add noise. An average over a few runs crossed its limit in CI
+  (8486 bytes against 8192) and never locally.
+- Under `-race`, `sync.Pool.Put` drops a quarter of the values it is given
+  (`sync/pool.go`, Go 1.27). Most CI setups run `go test -race`, so a
+  pooled buffer is missing in about one run out of four, and a median over
+  21 runs can still land on a fresh allocation.
+
+Skipping the test under `-race` would remove it from CI. Count instead: measure
+single operations, count those below half the buffer size, and require a
+share that holds under the drop rate (7 of 21, where about 16 are expected
+under `-race` and 0 without the pool). Interleave a control without the pool
+that must show the allocation, so the test proves it can see what it checks.
+Before relying on it, revert the optimisation once and watch the test fail,
+with and without `-race`.
+
 ## Related
 
 - `references/fuzz-testing.md` — fuzz testing patterns, security-focused seeds

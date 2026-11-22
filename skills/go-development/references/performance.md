@@ -93,10 +93,22 @@ Measured on a scheduler (ofelia) with `--cpus=1`, 30 local jobs per second:
 throttled in 0 periods in all 6 runs of 60 s, about 1.8% of one CPU. An
 I/O-bound service rarely reaches its quota.
 
-Log `runtime.GOMAXPROCS(0)`, `runtime.NumCPU()` and the cgroup limit at
-startup, so the chosen value is visible without a debugger
-([netresearch/ofelia#972](https://github.com/netresearch/ofelia/pull/972)
-is an example).
+Log `runtime.GOMAXPROCS(0)` and `runtime.NumCPU()` at startup, so the chosen
+value is visible without a debugger: `gomaxprocs` below `cpus` without a
+`GOMAXPROCS` variable and without a `runtime.GOMAXPROCS(n)` call in the
+program means a CPU limit applied. Do not read the cgroup limit
+yourself. The runtime reads only the CPU limit of the process's own cgroup,
+not of its parents, through its internal `internal/runtime/cgroup` package
+(cgroup v1 and v2, mount lookup in `/proc/self/mountinfo`); a copy of that
+lookup is hundreds of lines and can drift from a later Go version. Take the
+limit from the container runtime instead: `docker inspect` shows it in
+`HostConfig.NanoCpus` (`--cpus`) or in `HostConfig.CpuQuota` divided by
+`HostConfig.CpuPeriod` (`--cpu-quota`; a `CpuPeriod` of 0 means the default
+of 100000 µs). That is the container's own limit, the one the runtime uses.
+A tighter limit on a parent cgroup is enforced by the kernel and ignored by
+the runtime; `nr_throttled` in `cpu.stat` shows its effect. [netresearch/ofelia#972](https://github.com/netresearch/ofelia/pull/972)
+is an example; its first version copied the lookup, walked the parent
+cgroups, and showed a limit the runtime ignores.
 
 ## 4. Inlining, Escape Analysis and PGO
 
