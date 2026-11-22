@@ -20,15 +20,22 @@ the measurement shows, change one thing, and measure again.
   benchstat old.txt new.txt
   ```
 
-- **Profiles of the running service:** import `net/http/pprof` behind a
-  flag and bind it to loopback. Profile under a realistic load, not idle:
+- **Profiles of the running service:** serve the pprof handlers behind a
+  flag on a loopback listener of their own. Importing `net/http/pprof`
+  registers them on `http.DefaultServeMux`, so a public server that uses the
+  default mux exposes them too: give the public server its own
+  `http.NewServeMux()`. Profile under a realistic load, not idle:
 
   ```bash
   curl -o cpu.prof 'http://127.0.0.1:6060/debug/pprof/profile?seconds=60'
-  curl -o heap.prof http://127.0.0.1:6060/debug/pprof/heap
+  curl -o allocs.prof 'http://127.0.0.1:6060/debug/pprof/allocs?seconds=60'
   go tool pprof -top -cum ./binary cpu.prof
-  go tool pprof -sample_index=alloc_space -top ./binary heap.prof
+  go tool pprof -sample_index=alloc_space -top ./binary allocs.prof
   ```
+
+  `?seconds=N` on `allocs` or `heap` returns a delta profile of that
+  interval. Without it, `alloc_space` counts everything since the process
+  started, startup included.
 
 - **A profile proposes, the clock decides.** A function with a large share
   of samples or bytes is a candidate. It is a saving only when a paired
@@ -71,8 +78,11 @@ docker exec <container> cat /sys/fs/cgroup/cpu.stat   # nr_periods, nr_throttled
 ```
 
 These are the cgroup v2 paths, where the limit is in `cpu.max`. Under
-cgroup v1 the counters are in `/sys/fs/cgroup/cpu,cpuacct/cpu.stat` and the
-limit in `cpu.cfs_quota_us` and `cpu.cfs_period_us`.
+cgroup v1 the counters are in `cpu.stat` and the limit in
+`cpu.cfs_quota_us` and `cpu.cfs_period_us` of the cpu controller's
+directory, often `/sys/fs/cgroup/cpu,cpuacct` or `/sys/fs/cgroup/cpu`.
+`/proc/self/cgroup` names the process's cgroup per controller, and
+`/proc/self/mountinfo` names where each controller is mounted.
 
 - `nr_throttled` grows with `nr_periods`: test `GOMAXPROCS=1` against the
   default, both arms under the same load (section 2), and compare latency.
@@ -99,16 +109,21 @@ is an example).
 - **Profile-guided optimization (PGO)** is the tool that changes inlining
   with data. A CPU profile saved as `default.pgo` in the main package's
   directory is used by every build, because `-pgo=auto` is the default.
-  PGO helps only where Go code itself holds the CPU time. Check the flat
-  share of your own packages first:
+  PGO applies to the main package's dependencies and the standard library
+  too, so it can help where any Go code holds the CPU time; it cannot help
+  time spent in syscalls or waiting. Read the flat column first, then compare
+  builds with and without the profile:
 
   ```bash
-  go tool pprof -top -nodecount=200 ./binary cpu.prof   # flat column, own packages
+  go tool pprof -top -nodecount=200 ./binary cpu.prof   # flat column: Go code or syscalls?
+  go build -pgo=off -o old . && go build -pgo=cpu.prof -o new .   # then benchmark both
   ```
 
   For ofelia, 0 of 240 ms of samples fell into its own code or its cron
-  library, and a build with that profile made 0 different inlining decisions
-  in its core package (2015 inlined calls with and without PGO).
+  library; the samples went to syscalls, the runtime and standard-library
+  code for process starts and logging. A build
+  with that profile made 0 different inlining decisions in its core package
+  (2015 inlined calls with and without PGO).
 - Do not hand-inline functions for speed. The compiler inlines small
   functions without help: the ofelia build above inlined 2015 call sites.
 
