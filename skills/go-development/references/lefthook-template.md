@@ -59,10 +59,15 @@ pre-push:
         while read -r _ local_sha _ remote_sha; do
           case "$local_sha" in *[!0]*) ;; *) continue ;; esac  # a deleted ref
           case "$remote_sha" in
-            *[!0]*) range="$remote_sha..$local_sha" ;;
+            *[!0]*) if git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+                      range="$remote_sha..$local_sha"
+                    else
+                      range="$local_sha --not --remotes"      # force push without a fetch
+                    fi ;;
             *) range="$local_sha --not --remotes" ;;          # a new branch
           esac
-          bad=$(for c in $(git rev-list $range); do
+          list=$(git rev-list $range) || { echo "rev-list failed for $range"; exit 1; }
+          bad=$(for c in $list; do
                   git cat-file commit "$c" | grep -q '^gpgsig' || git log -1 --format='%h %s' "$c"
                 done)
           [ -z "$bad" ] || { printf 'Unsigned commits:\n%s\n' "$bad"; exit 1; }
