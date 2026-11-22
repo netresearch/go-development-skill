@@ -2,8 +2,9 @@
 
 Read this before code decides something from whether a configured path
 exists or matches: a security default, a fallback, a "no config file, use
-flags" branch. Two `path/filepath` behaviours make such a decision fail open,
-and the existence check itself has a choice that matters.
+flags" branch. One `path/filepath` behaviour makes such a decision fail
+open, a second one makes it misread every Windows path, and the existence
+check itself has a choice that matters.
 
 ## `filepath.Glob` drops directory read errors
 
