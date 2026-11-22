@@ -68,7 +68,8 @@ pre-push:
           esac
           list=$(git rev-list $range) || { echo "rev-list failed for $range"; exit 1; }
           bad=$(for c in $list; do
-                  git cat-file commit "$c" | grep -q '^gpgsig' || git log -1 --format='%h %s' "$c"
+                  git cat-file commit "$c" | awk '/^$/ {exit} /^gpgsig/ {s=1} END {exit !s}' \
+                    || git log -1 --format='%h %s' "$c"
                 done)
           [ -z "$bad" ] || { printf 'Unsigned commits:\n%s\n' "$bad"; exit 1; }
         done
@@ -81,7 +82,10 @@ it starts, so a repository-local `commit.gpgsign false` leaves every replayed
 commit unsigned, and `-c commit.gpgsign=true` on `git rebase --continue` does
 not change that. The `signatures` step stops such a push before CI runs.
 Re-sign with `git rebase --exec 'git commit --amend --no-edit -S --signoff'
-<base>`, and start the next rebase with `git rebase -S`. Drop the step in a
+<base>` (add `--rebase-merges` when the branch contains merge commits, or the
+rebase flattens them and drops their conflict resolutions), and start the next
+rebase with `git rebase -S`. Commits already on another remote are not
+checked: they are published history, and re-signing them would rewrite it. Drop the step in a
 repository whose commits are not signed.
 
 **Pre-push timeout pitfall.** The `-short -timeout=60s` smoke-test stays fast
