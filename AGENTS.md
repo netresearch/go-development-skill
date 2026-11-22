@@ -62,6 +62,7 @@ This repository contains no Go code; `go test` and `golangci-lint` are commands 
 - [API Design](skills/go-development/references/api-design.md)
 - [Fuzz Testing](skills/go-development/references/fuzz-testing.md)
 - [Contracts & Invariants](skills/go-development/references/contracts-and-invariants.md)
+- [Config Paths and Globs](skills/go-development/references/filepath-globs.md)
 - [Mutation Testing](skills/go-development/references/mutation-testing.md)
 - [Makefile Patterns](skills/go-development/references/makefile.md)
 - [Go Modernization](skills/go-development/references/modernization.md)
