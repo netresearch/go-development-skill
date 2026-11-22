@@ -53,22 +53,26 @@ came from less work. With the limit raised to 50, both arms ran 1812 jobs in
 GOMAXPROCS is the number of threads that run Go code at the same time.
 
 - With a `go 1.25` or later line in `go.mod`, the runtime sets GOMAXPROCS
-  from the cgroup CPU limit (`cpu.max`), rounds a fractional limit up and
-  **never goes below 2** (`go doc runtime.GOMAXPROCS`). A container with
-  `--cpus=1` runs Go code on 2 threads.
+  from the cgroup CPU limit, rounds a fractional limit up and **never goes
+  below 2** unless the machine or the CPU affinity mask has fewer than 2 CPUs
+  (`go doc runtime.GOMAXPROCS`). On a host with 2 or more CPUs, a container
+  with `--cpus=1` runs Go code on 2 threads.
 - With `go 1.24` or older, `GODEBUG=containermaxprocs=0` is the default:
   GOMAXPROCS is `runtime.NumCPU()`, whatever the limit.
 - Setting the `GOMAXPROCS` environment variable fixes the value and turns
   off the runtime's automatic update when the limit changes.
 
 2 threads under a 1-CPU quota can use up the quota early in each 100 ms
-period, and the process then waits until the next period. One published
-measurement of a CPU-busy HTTP service under `--cpus=1` saw p99 latency drop
-from 16 ms to 1.6 ms with `GOMAXPROCS=1`. Check before you change anything:
+period, and the process then waits until the next period. That raises the
+tail latency of a CPU-busy service. Check before you change anything:
 
 ```bash
 docker exec <container> cat /sys/fs/cgroup/cpu.stat   # nr_periods, nr_throttled
 ```
+
+These are the cgroup v2 paths, where the limit is in `cpu.max`. Under
+cgroup v1 the counters are in `/sys/fs/cgroup/cpu,cpuacct/cpu.stat` and the
+limit in `cpu.cfs_quota_us` and `cpu.cfs_period_us`.
 
 - `nr_throttled` grows with `nr_periods`: test `GOMAXPROCS=1` against the
   default, both arms under the same load (section 2), and compare latency.
@@ -88,8 +92,8 @@ is an example).
 
 - `-gcflags` passes flags to the **compiler** (`go help build`), not to the
   garbage collector. `-gcflags=-m` prints inlining and escape decisions.
-  A build from the cache prints nothing: add `-a`, and scope it to one
-  package, `-gcflags='example.com/mod/pkg=-m'`.
+  Scope it to one package, `-gcflags='example.com/mod/pkg=-m'`; a bare
+  `-gcflags=-m` applies only to the packages named on the command line.
 - Read `-m` output only for functions the CPU profile shows as hot. A count
   of "cannot inline" lines across a repository is no finding.
 - **Profile-guided optimization (PGO)** is the tool that changes inlining
