@@ -715,8 +715,8 @@ func setupOpenLDAPContainer(t *testing.T) (host string, port int, cleanup func()
             "OPENLDAP_URLS":                   "ldap://:389 ldapi:///",
             "OPENLDAP_BOOTSTRAP_ORGANIZATION": "Test Org",
             "OPENLDAP_BOOTSTRAP_SUFFIX":       "dc=example,dc=com",
-            // v2 takes the root password only as a hash. This is "admin".
-            "OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED": "{SSHA}0wTDbKYUmTZXpn9sqOSPOC4Zd/G3UXms",
+            // Despite the name, a value without {SCHEME} prefix is stored as cleartext.
+            "OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED": "admin", // OK for ephemeral test container
         },
         WaitingFor: wait.ForLog("slapd starting"),
     }
@@ -833,17 +833,16 @@ services:
       OPENLDAP_URLS: "ldap://:389 ldapi:///"
       OPENLDAP_BOOTSTRAP_ORGANIZATION: "Test Org"
       OPENLDAP_BOOTSTRAP_SUFFIX: "dc=test,dc=local"
-      # "admin" as {SSHA}; generate another with
-      # docker run --rm --entrypoint "" osixia/openldap:2.6.15 slappasswd -s <password> -h {SSHA}
-      OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED: "{SSHA}0wTDbKYUmTZXpn9sqOSPOC4Zd/G3UXms"
+      # Despite the name, a value without {SCHEME} prefix is stored as cleartext.
+      OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED: "admin"
 ```
 
 ### osixia/openldap 2.x differs from 1.x
 
-`osixia/openldap` 2.x (OpenLDAP 2.6) is a rewrite of the 1.x image, and Renovate offers it as a major update. A container started with the 1.x settings restarts in a loop. The differences that a test setup meets:
+`osixia/openldap` 2.x (OpenLDAP 2.6) is a rewrite of the 1.x image, and Renovate offers it as a major update. The 1.x settings have no effect in 2.x: the netresearch/ldap-manager dev container restarted in a loop with them. The differences that a test setup meets:
 
 - **Settings:** `LDAP_ORGANISATION`, `LDAP_DOMAIN`, `LDAP_ADMIN_PASSWORD` and `LDAP_BASE_DN` are gone. Use `OPENLDAP_BOOTSTRAP_ORGANIZATION` and `OPENLDAP_BOOTSTRAP_SUFFIX`.
-- **Passwords:** the root, config and read-only passwords are accepted only as hashes, in `OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED`, `OPENLDAP_BOOTSTRAP_CONFIG_ROOT_PASSWORD_HASHED` and `OPENLDAP_BOOTSTRAP_DATA_READONLY_PASSWORD_HASHED`. `{SSHA}` works. A Go test can compute it: SHA-1 over password plus an 8-byte random salt, then `"{SSHA}" + base64(sum + salt)`.
+- **Passwords:** the root, config and read-only passwords go into `OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED`, `OPENLDAP_BOOTSTRAP_CONFIG_ROOT_PASSWORD_HASHED` and `OPENLDAP_BOOTSTRAP_DATA_READONLY_PASSWORD_HASHED`. Despite the names, each takes any `userPassword` value: a `{SSHA}` hash, or a value without `{SCHEME}` prefix, which slapd stores and compares as cleartext. Cleartext is fine for an ephemeral test container. Generate a hash with `docker run --rm --entrypoint "" osixia/openldap:2.6.15 slappasswd -s <password> -h {SSHA}`.
 - **Ports:** slapd listens on 3890 and 6360 by default. `OPENLDAP_URLS="ldap://:389 ldaps://:636 ldapi:///"` restores 389 and 636.
 - **Seed data:** LDIF files go into `/container/services/openldap-bootstrap/assets/ldif/data/custom/`. Bootstrap runs only into empty config and data directories (`/etc/openldap/slapd.d`, `/var/lib/openldap/openldap-data`), so a volume that holds 1.x data needs a new name.
 - **TLS:** the image creates no certificate. With `OPENLDAP_BOOTSTRAP_TLS=true`, mount `tls.crt`, `tls.key` and `ca.crt` at `/container/services/openldap/assets/certs/`, readable by uid 911, which slapd runs as.
