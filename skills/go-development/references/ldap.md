@@ -642,6 +642,7 @@ tlsConfig := &tls.Config{
 ```
 
 - Resolve suite names from configuration through `tls.CipherSuites()` and `tls.InsecureCipherSuites()`. The RSA-key-exchange suites are in the second list, so a lookup in the first list alone rejects them.
+- Reject the TLS 1.3 suite names, such as `TLS_AES_128_GCM_SHA256`, whose `SupportedVersions` holds only TLS 1.3. `tls.CipherSuites()` lists them, but `tls.Config.CipherSuites` has no effect on TLS 1.3, so accepting them would promise a restriction that does not hold.
 - Reject a configuration in which no allowed TLS version supports a named suite, such as a minimum of TLS 1.3 with a TLS 1.2 suite. Each `tls.CipherSuite` value carries `SupportedVersions` for that check.
 - Log a warning when a configured suite is in `tls.InsecureCipherSuites()`, because it gives no forward secrecy.
 - gosec reports G402 on a `tls.Config` built from configuration. Put the `#nosec G402` comment, with its reason, on the line that gosec flags.
