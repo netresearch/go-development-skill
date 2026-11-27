@@ -595,9 +595,9 @@ func (c *Client) ListComputers(filter string) ([]*Computer, error) {
 
 ### simple-ldap-go: host names and SkipConnectionCheck
 
-Before v1.18.0, `simple-ldap-go`'s `isExampleServerName()` treated any server name containing `"localhost"`, `"example."`, `"test.com"` or one of about a dozen other substrings as a mock server. The client then skipped its connection check, cache, pool and metrics, and calls failed with `"connection to example server not available"`, also against a real directory on `localhost`. On those versions, use `127.0.0.1`.
+Before v1.18.0, `simple-ldap-go`'s `isExampleServerName()` treated any server name containing `"localhost"`, `"example."`, `"test.com"` or one of about a dozen other substrings as a mock server. The client then skipped its connection check, cache, pool and metrics, also against a real directory on `localhost`. Some calls failed with `"connection to example server not available"`; others returned made-up data without an error (`FindUsers` in v1.17.0 returns 150 fabricated users), which reads like a real directory answer. On those versions, use `127.0.0.1`.
 
-Since v1.18.0 the host name decides nothing: every `ldap.New` dials. A unit test that builds a client without a directory sets `SkipConnectionCheck: true` and points the client at an address that refuses at once, such as `ldap://127.0.0.1:1`; a made-up host name costs a DNS lookup on every directory call.
+Since v1.18.0 the host name decides nothing: `ldap.New` dials the server to check it, unless `SkipConnectionCheck` is set, in which case the first directory operation is the first dial. A unit test that builds a client without a directory sets `SkipConnectionCheck: true` and points the client at an address that refuses at once, such as `ldap://127.0.0.1:1`; a made-up host name costs a DNS lookup on every directory call.
 
 ```go
 // simple-ldap-go v1.18.0 and later: a client for a unit test, no directory
