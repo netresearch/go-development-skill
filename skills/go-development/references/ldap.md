@@ -855,6 +855,8 @@ services:
 - **Seed data:** LDIF files go into `/container/services/openldap-bootstrap/assets/ldif/data/custom/`. Bootstrap runs only into empty config and data directories (`/etc/openldap/slapd.d`, `/var/lib/openldap/openldap-data`), so a volume that holds 1.x data needs a new name.
 - **TLS:** the image creates no certificate. With `OPENLDAP_BOOTSTRAP_TLS=true`, mount `tls.crt`, `tls.key` and `ca.crt` at `/container/services/openldap/assets/certs/`, readable by uid 911, which slapd runs as.
 - **ACL changes:** the `ldapi:///` identity has no write access to `cn=config`. Bind as `cn=admin,cn=config` with the config password instead.
+- **Modules, schemas, overlays:** `cn=module{0},cn=config` loads only `back_mdb.so` and `argon2.so`, and no overlay is active, so `memberof` and `refint` are off. Modules ship as `.so` without libtool `.la` files: load `ppolicy.so`, not `ppolicy.la`. The schemas are `core`, `cosine`, `inetorgperson` and `rfc2307bis`, not `nis`.
+- **ppolicy:** since OpenLDAP 2.5 the `pwdPolicy` object class comes with the ppolicy module. Load the module before adding a policy entry; the other order fails with `objectClass: value #2 invalid per syntax`.
 - **Readiness:** the log line `slapd starting` still marks a ready server.
 
 netresearch/ldap-manager#741 is a complete migration of a Compose dev stack, testcontainers and e2e tests.
