@@ -628,6 +628,27 @@ address := net.JoinHostPort(host, strconv.Itoa(port))
 
 ## Testing LDAP with Testcontainers
 
+### Servers that offer only static-RSA cipher suites
+
+Since Go 1.22, `crypto/tls` leaves cipher suites with RSA key exchange (`TLS_RSA_WITH_*`) out of its default list. A directory server that offers only such a suite, as some eDirectory installations do, fails the handshake with `remote error: tls: handshake failure`. Naming the suite in `tls.Config.CipherSuites` enables it again for that one connection, which is narrower than the process-wide `GODEBUG=tlsrsakex=1`:
+
+```go
+tlsConfig := &tls.Config{
+    ServerName:   host,
+    MinVersion:   tls.VersionTLS12,
+    MaxVersion:   tls.VersionTLS12, // CipherSuites has no effect on TLS 1.3
+    CipherSuites: []uint16{tls.TLS_RSA_WITH_AES_256_GCM_SHA384},
+}
+```
+
+- Resolve suite names from configuration through `tls.CipherSuites()` and `tls.InsecureCipherSuites()`. The RSA-key-exchange suites are in the second list, so a lookup in the first list alone rejects them.
+- Reject the TLS 1.3 suite names, such as `TLS_AES_128_GCM_SHA256`, whose `SupportedVersions` holds only TLS 1.3. `tls.CipherSuites()` lists them, but `tls.Config.CipherSuites` has no effect on TLS 1.3, so accepting them would promise a restriction that does not hold.
+- Reject a configuration in which no allowed TLS version supports a named suite, such as a minimum of TLS 1.3 with a TLS 1.2 suite. Each `tls.CipherSuite` value carries `SupportedVersions` for that check.
+- Log a warning when a configured suite is in `tls.InsecureCipherSuites()`, because it gives no forward secrecy.
+- gosec reports G402 on a `tls.Config` built from configuration. Put the `#nosec G402` comment, with its reason, on the line that gosec flags.
+
+netresearch/ldap-manager#738 implements this as `LDAP_TLS_MIN_VERSION`, `LDAP_TLS_MAX_VERSION`, `LDAP_TLS_CIPHER_SUITES`, `LDAP_TLS_CA_FILE` and `LDAP_TLS_SERVER_NAME`.
+
 ### LDAP Lazy Binding Behavior
 
 **Critical**: LDAP connections use **lazy binding**. The `Dial()` or `DialTLS()` call only establishes a TCP connection - authentication is not validated until the first LDAP operation.
@@ -688,15 +709,17 @@ func setupOpenLDAPContainer(t *testing.T) (host string, port int, cleanup func()
     ctx := context.Background()
 
     req := testcontainers.ContainerRequest{
-        Image:        "osixia/openldap:1.5.0",  // Pin version!
+        Image:        "osixia/openldap:2.6.15", // Pin version!
         ExposedPorts: []string{"389/tcp"},
         Env: map[string]string{
-            "LDAP_ORGANISATION":    "Test Org",
-            "LDAP_DOMAIN":          "example.com",
-            "LDAP_ADMIN_PASSWORD":  "admin",  // OK for ephemeral test container
-            "LDAP_BASE_DN":         "dc=example,dc=com",
+            // v2 listens on 3890/6360 unless OPENLDAP_URLS says otherwise.
+            "OPENLDAP_URLS":                   "ldap://:389 ldapi:///",
+            "OPENLDAP_BOOTSTRAP_ORGANIZATION": "Test Org",
+            "OPENLDAP_BOOTSTRAP_SUFFIX":       "dc=example,dc=com",
+            // Despite the name, a value without {SCHEME} prefix is stored as cleartext.
+            "OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED": "admin", // OK for ephemeral test container
         },
-        WaitingFor: wait.ForListeningPort("389/tcp"),
+        WaitingFor: wait.ForLog("slapd starting"),
     }
 
     container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -804,14 +827,15 @@ GitHub Actions service container configuration:
 ```yaml
 services:
   openldap:
-    image: osixia/openldap:1.5.0
+    image: osixia/openldap:2.6.15
     ports:
       - 1389:389
     env:
-      LDAP_ORGANISATION: "Test Org"
-      LDAP_DOMAIN: "test.local"
-      LDAP_ADMIN_PASSWORD: "admin"
-      LDAP_BASE_DN: "dc=test,dc=local"
+      OPENLDAP_URLS: "ldap://:389 ldapi:///"
+      OPENLDAP_BOOTSTRAP_ORGANIZATION: "Test Org"
+      OPENLDAP_BOOTSTRAP_SUFFIX: "dc=test,dc=local"
+      # Despite the name, a value without {SCHEME} prefix is stored as cleartext.
+      OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED: "admin"
 ```
 
 **Key patterns:**
@@ -820,6 +844,20 @@ services:
 - Use `go-ldap/ldap/v3` directly for seeding test data (independent of app's LDAP library)
 - Make handler assertions resilient: accept success OR error when LDAP session credentials may be stale
 - Close connections with `defer func() { _ = conn.Close() }()` to satisfy `errcheck`
+
+### osixia/openldap 2.x differs from 1.x
+
+`osixia/openldap` 2.x (OpenLDAP 2.6) is a rewrite of the 1.x image, and Renovate offers it as a major update. The 1.x settings have no effect in 2.x: the netresearch/ldap-manager dev container restarted in a loop with them. The differences that a test setup meets:
+
+- **Settings:** `LDAP_ORGANISATION`, `LDAP_DOMAIN`, `LDAP_ADMIN_PASSWORD` and `LDAP_BASE_DN` are gone. Use `OPENLDAP_BOOTSTRAP_ORGANIZATION` and `OPENLDAP_BOOTSTRAP_SUFFIX`.
+- **Passwords:** the root, config and read-only passwords go into `OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED`, `OPENLDAP_BOOTSTRAP_CONFIG_ROOT_PASSWORD_HASHED` and `OPENLDAP_BOOTSTRAP_DATA_READONLY_PASSWORD_HASHED`. Despite the names, each takes any `userPassword` value: a `{SSHA}` hash, or a value without `{SCHEME}` prefix, which slapd stores and compares as cleartext. Cleartext is fine for an ephemeral test container. Generate a hash with `docker run --rm --entrypoint "" osixia/openldap:2.6.15 slappasswd -s <password> -h {SSHA}`.
+- **Ports:** slapd listens on 3890 and 6360 by default. `OPENLDAP_URLS="ldap://:389 ldaps://:636 ldapi:///"` restores 389 and 636.
+- **Seed data:** LDIF files go into `/container/services/openldap-bootstrap/assets/ldif/data/custom/`. Bootstrap runs only into empty config and data directories (`/etc/openldap/slapd.d`, `/var/lib/openldap/openldap-data`), so a volume that holds 1.x data needs a new name.
+- **TLS:** the image creates no certificate. With `OPENLDAP_BOOTSTRAP_TLS=true`, mount `tls.crt`, `tls.key` and `ca.crt` at `/container/services/openldap/assets/certs/`, readable by uid 911, which slapd runs as.
+- **ACL changes:** the `ldapi:///` identity has no write access to `cn=config`. Bind as `cn=admin,cn=config` with the config password instead.
+- **Readiness:** the log line `slapd starting` still marks a ready server.
+
+netresearch/ldap-manager#741 is a complete migration of a Compose dev stack, testcontainers and e2e tests.
 
 ### Security Note: Test Credentials
 
