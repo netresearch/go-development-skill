@@ -628,8 +628,6 @@ address := net.JoinHostPort(host, strconv.Itoa(port))
 
 ## Testing LDAP with Testcontainers
 
-### LDAP Lazy Binding Behavior
-
 ### Servers that offer only static-RSA cipher suites
 
 Since Go 1.22, `crypto/tls` leaves cipher suites with RSA key exchange (`TLS_RSA_WITH_*`) out of its default list. A directory server that offers only such a suite, as some eDirectory installations do, fails the handshake with `remote error: tls: handshake failure`. Naming the suite in `tls.Config.CipherSuites` enables it again for that one connection, which is narrower than the process-wide `GODEBUG=tlsrsakex=1`:
@@ -649,6 +647,8 @@ tlsConfig := &tls.Config{
 - gosec reports G402 on a `tls.Config` built from configuration. Put the `#nosec G402` comment, with its reason, on the line that gosec flags.
 
 netresearch/ldap-manager#738 implements this as `LDAP_TLS_MIN_VERSION`, `LDAP_TLS_MAX_VERSION`, `LDAP_TLS_CIPHER_SUITES`, `LDAP_TLS_CA_FILE` and `LDAP_TLS_SERVER_NAME`.
+
+### LDAP Lazy Binding Behavior
 
 **Critical**: LDAP connections use **lazy binding**. The `Dial()` or `DialTLS()` call only establishes a TCP connection - authentication is not validated until the first LDAP operation.
 
@@ -837,6 +837,13 @@ services:
       OPENLDAP_BOOTSTRAP_DATA_ROOT_PASSWORD_HASHED: "admin"
 ```
 
+**Key patterns:**
+- Use `127.0.0.1` not `localhost` to avoid simple-ldap-go mock detection
+- Use `net.Dialer` (not `net.DialTimeout`) to satisfy the `noctx` linter
+- Use `go-ldap/ldap/v3` directly for seeding test data (independent of app's LDAP library)
+- Make handler assertions resilient: accept success OR error when LDAP session credentials may be stale
+- Close connections with `defer func() { _ = conn.Close() }()` to satisfy `errcheck`
+
 ### osixia/openldap 2.x differs from 1.x
 
 `osixia/openldap` 2.x (OpenLDAP 2.6) is a rewrite of the 1.x image, and Renovate offers it as a major update. The 1.x settings have no effect in 2.x: the netresearch/ldap-manager dev container restarted in a loop with them. The differences that a test setup meets:
@@ -850,13 +857,6 @@ services:
 - **Readiness:** the log line `slapd starting` still marks a ready server.
 
 netresearch/ldap-manager#741 is a complete migration of a Compose dev stack, testcontainers and e2e tests.
-
-**Key patterns:**
-- Use `127.0.0.1` not `localhost` to avoid simple-ldap-go mock detection
-- Use `net.Dialer` (not `net.DialTimeout`) to satisfy the `noctx` linter
-- Use `go-ldap/ldap/v3` directly for seeding test data (independent of app's LDAP library)
-- Make handler assertions resilient: accept success OR error when LDAP session credentials may be stale
-- Close connections with `defer func() { _ = conn.Close() }()` to satisfy `errcheck`
 
 ### Security Note: Test Credentials
 
