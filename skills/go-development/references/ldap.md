@@ -593,26 +593,20 @@ func (c *Client) ListComputers(filter string) ([]*Computer, error) {
 
 ## Common Gotchas
 
-### simple-ldap-go "localhost" Mock Detection
+### simple-ldap-go: host names and SkipConnectionCheck
 
-The `simple-ldap-go` library's `isExampleServerName()` function treats `"localhost"` as a mock/example server name. When this is detected, the library returns fake connections that fail with `"connection to example server not available"`.
+Before v1.18.0, `simple-ldap-go`'s `isExampleServerName()` treated any server name containing `"localhost"`, `"example."`, `"test.com"` or one of about a dozen other substrings as a mock server. The client then skipped its connection check, cache, pool and metrics, and calls failed with `"connection to example server not available"`, also against a real directory on `localhost`. On those versions, use `127.0.0.1`.
+
+Since v1.18.0 the host name decides nothing: every `ldap.New` dials. A unit test that builds a client without a directory sets `SkipConnectionCheck: true` and points the client at an address that refuses at once, such as `ldap://127.0.0.1:1`; a made-up host name costs a DNS lookup on every directory call.
 
 ```go
-// BAD - simple-ldap-go treats "localhost" as a mock server
+// simple-ldap-go v1.18.0 and later: a client for a unit test, no directory
 cfg := simpleldap.Config{
-    Server: "localhost",
-    Port:   1389,
-}
-// Returns: "connection to example server not available"
-
-// GOOD - Use 127.0.0.1 to avoid mock detection
-cfg := simpleldap.Config{
-    Server: "127.0.0.1",
-    Port:   1389,
+    Server:              "ldap://127.0.0.1:1", // refused at once
+    BaseDN:              "dc=example,dc=com",
+    SkipConnectionCheck: true,
 }
 ```
-
-This applies to any context using `simple-ldap-go`, including integration tests against a real LDAP server running on localhost.
 
 ### IPv6-Safe Host:Port Formatting
 
@@ -773,7 +767,7 @@ import (
 )
 
 const (
-    ldapHost   = "127.0.0.1" // NOT "localhost" — avoids simple-ldap-go mock detection
+    ldapHost   = "127.0.0.1" // simple-ldap-go before v1.18.0 mocks any host named localhost
     ldapPort   = 1389
     ldapBaseDN = "dc=test,dc=local"
     ldapAdmin  = "cn=admin,dc=test,dc=local"
@@ -839,7 +833,7 @@ services:
 ```
 
 **Key patterns:**
-- Use `127.0.0.1` not `localhost` to avoid simple-ldap-go mock detection
+- With simple-ldap-go before v1.18.0, use `127.0.0.1`, not `localhost`: those versions treat `localhost` as a mock server (see "simple-ldap-go: host names and SkipConnectionCheck")
 - Use `net.Dialer` (not `net.DialTimeout`) to satisfy the `noctx` linter
 - Use `go-ldap/ldap/v3` directly for seeding test data (independent of app's LDAP library)
 - Make handler assertions resilient: accept success OR error when LDAP session credentials may be stale
